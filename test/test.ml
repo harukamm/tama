@@ -93,6 +93,23 @@ let e =
   with Tokenize_Error (str, inf) -> str = "@xx@@" && inf = info
 let () = assert e
 
+let s = " (* A(*ABC*)D  \n\
+*) x (*x*)"
+let e = Tokenize.main s
+let t1 = COMMENT ("(* A(*ABC*)D  \n*)", ((0, 1), (1, 2)))
+let t2 = VAR ("x", (1, (3, 4)))
+let t3 = COMMENT ("(*x*)", ((1, 5), (1, 10)))
+let () = assert ([t1; t2; t3] = e)
+
+let s = " (* (* (*\n\
+ABC*)"
+let e =
+  try
+    let _ = Tokenize.main s in
+    false
+  with Comment_Not_Terminated info ->
+    info = ((0, 1), (1, 5))
+let () = assert e
 
 (* Parse test *)
 let init_ptr () = Parse.set 0

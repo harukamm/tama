@@ -83,6 +83,48 @@ let until_spaces = skip_not_mem spaces
 (* consist_of: string -> char list -> bool *)
 let all_mem s cs = List.for_all (fun c -> List.mem c cs) (string_to_clst s)
 
+(* look_ahead: int -> int -> string *)
+let look_ahead n pt s =
+  let npt = pt + n in
+  let len = String.length s in
+  if pt <= 0 || len <= npt then ""
+  else String.sub s pt n
+
+(* look_back: int -> int -> string *)
+let look_back n pt s =
+  let bpt = pt - n + 1 in
+  let len = String.length s in
+  if bpt <= 0 || len <= pt then ""
+  else String.sub s bpt n
+
+(* skip_comment: string state_t -> string state_t *)
+let skip_comment (pt, lno, cno, s) =
+  let len = String.length s in
+  let rec h pt_ lno_ cno_ nested text =
+    begin
+      let (pt_1, lno_1, cno_1, cmt) =
+        skip_not_mem ['('; ')'] (pt_, lno_, cno_, s) in
+      let text = text ^ cmt in
+      let nt = look_ahead 2 pt_1 s in
+      let bk = look_back 2 pt_1 s in
+      if len <= pt_1 then
+        raise (Comment_Not_Terminated ((lno, cno), (lno_1, cno_1)))
+      else if bk = "*)" && nested = 1 then
+        (pt_1 + 1, lno_1, cno_1 + 1, text ^ ")")
+      else if nt = "(*" || bk = "*)" then
+        let is_open = nt = "(*" in
+        let (tail, diff, nested') =
+          if is_open then (nt, 2, nested + 1) else (")", 1, nested - 1) in
+        h (pt_1 + diff) lno_1 (cno_1 + diff) nested' (text ^ tail)
+      else
+        let c = String.sub s pt_1 1 in
+        h (pt_1 + 1) lno_1 (cno_1 + 1) nested (text ^ c)
+    end
+  in
+  let hds = look_ahead 2 pt s in
+  if hds <> "(*" then (pt, lno, cno, "")
+  else h (pt + 2) lno (cno + 2) 1 "(*"
+
 (* starts_with: string -> char -> bool *)
 let starts_with s c = 0 < String.length s && String.get s 0 = c
 
@@ -118,14 +160,21 @@ let one_token (pt, lno, cno, ss) =
         if len <= pt1 then raise End_of_input
         else
           let c = String.get ss pt1 in
+          let nxt = pt1 + 1 in
+          let myb_cmt = nxt < len && String.get ss nxt = '*' in
           let info = (lno1, (cno1, cno1 + 1)) in
           match c with
             | '+' -> (pt1 + 1, lno1, cno1 + 1, PLUS (info))
             | '-' -> (pt1 + 1, lno1, cno1 + 1, MINUS (info))
             | '*' -> (pt1 + 1, lno1, cno1 + 1, TIMES (info))
             | '/' -> (pt1 + 1, lno1, cno1 + 1, DIVIDE (info))
-            | '(' -> (pt1 + 1, lno1, cno1 + 1, LPAREN (info))
             | ')' -> (pt1 + 1, lno1, cno1 + 1, RPAREN (info))
+            | '(' ->
+              if not myb_cmt then (pt1 + 1, lno1, cno1 + 1, LPAREN (info))
+              else
+                let (pt2, lno2, cno2, cmt) = skip_comment (pt1, lno1, cno1, ss) in
+                let info = ((lno1, cno1), (lno2, cno2)) in
+                (pt2, lno2, cno2, COMMENT (cmt, info))
             | _ ->
               let (_, lno2, cno2, str) = until_spaces (pt1, lno1, cno1, ss) in
               let info = (lno2, (cno1, cno2)) in

@@ -16,8 +16,11 @@ type ast_t =
   | Minus of ast_t * ast_t * loc_info2
   | Times of ast_t * ast_t * loc_info2
   | Divide of ast_t * ast_t * loc_info2
+  | Comment of string * loc_info2
 
 exception Tokenize_Error of (string * loc_info)
+
+exception Comment_Not_Terminated of loc_info2
 
 type token_t =
   | INT of int * loc_info
@@ -28,6 +31,7 @@ type token_t =
   | DIVIDE of loc_info
   | LPAREN of loc_info
   | RPAREN of loc_info
+  | COMMENT of string * loc_info2
 
 type app_states_t = {
   is_executing: bool;
@@ -43,6 +47,7 @@ type sym_t =
   | SDIVIDE
   | SLPAREN
   | SRPAREN
+  | SCOMMENT
 
 let sym_of_token t = match t with
   | INT _ -> SINT
@@ -53,6 +58,7 @@ let sym_of_token t = match t with
   | DIVIDE _ -> SDIVIDE
   | LPAREN _ -> SLPAREN
   | RPAREN _ -> SRPAREN
+  | COMMENT _ -> SCOMMENT
 
 let tkn_eq sym t =
   let sym' = sym_of_token t in
@@ -86,6 +92,7 @@ let get_tkn_info t = match t with
   | DIVIDE (l) -> l
   | LPAREN (l) -> l
   | RPAREN (l) -> l
+  | COMMENT _ -> failwith "token COMMENT has location-info2"
 
 let get_ast_info t = match t with
   | Int (_, l) -> l
@@ -94,6 +101,7 @@ let get_ast_info t = match t with
   | Minus (_, _, l) -> l
   | Times (_, _, l) -> l
   | Divide (_, _, l) -> l
+  | Comment (_, l) -> l
 
 let set_ast_info t l = match t with
   | Int (t, _) -> Int (t, l)
@@ -102,6 +110,7 @@ let set_ast_info t l = match t with
   | Minus (t1, t2, _) -> Minus (t1, t2, l)
   | Times (t1, t2, _) -> Times (t1, t2, l)
   | Divide (t1, t2, _) -> Divide (t1, t2, l)
+  | Comment (s, _) -> Comment (s, l)
 
 let rec soa t = match t with
   | Int (i, l) ->
@@ -116,6 +125,8 @@ let rec soa t = match t with
     "Times (" ^ (soa e1) ^ ", " ^ (soa e2) ^ ", " ^ (soli2 l) ^ ")"
   | Divide (e1, e2, l) ->
     "Divide (" ^ (soa e1) ^ ", " ^ (soa e2) ^ ", " ^ (soli2 l) ^ ")"
+  | Comment (s, l) ->
+    "Comemnt (" ^ s ^ ", " ^ (soli2 l) ^ ")"
 
 let sot t = match t with
   | INT (i, l) ->
@@ -134,6 +145,8 @@ let sot t = match t with
     "LRAREN (" ^ (soli l) ^ ")"
   | RPAREN (l) ->
     "RPAREN (" ^ (soli l) ^ ")"
+  | COMMENT (s, l) ->
+    "COMMENT (" ^ s ^ "," ^ (soli2 l) ^ ")"
 
 let string_of_linfo = soli
 
