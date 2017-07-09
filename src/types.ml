@@ -46,6 +46,10 @@ let tkn_eq sym t = match (sym, t) with
   | (STIMES, TIMES _) | (SDIVIDE, DIVIDE _) -> true
   | _ -> false
 
+let rec tkn_mem syms t = match syms with
+  | [] -> false
+  | x :: xs -> tkn_eq x t || tkn_mem xs t 
+
 let rec tkns_eq syms ts = match (syms,  ts) with
   | ([], []) -> true
   | (x :: xs, []) -> false

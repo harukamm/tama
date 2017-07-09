@@ -42,15 +42,6 @@ let expect p =
   let x = get () in
   if p x then (ahead (); x) else (raise (Unexpected x))
 
-(* expects: (token_t -> bool) list -> token_t *)
-let rec expects ps = match ps with
-  | [] ->
-    raise (Not_Found_Match "expectes")
-  | p :: rest ->
-    try
-      expect p
-    with Unexpected _ -> expects rest
-
 (* forsee: int -> token_t list *)
 let forsee n =
   let pt = index () in
@@ -68,6 +59,13 @@ let expect_mult n p =
   let lst = forsee n in
   if p lst then (ahead_with n; lst)
   else (raise (Not_Found_Match "expect_mult")) 
+
+(* expect_tkn: sym_t -> token *)
+let expect_tkn sym = expect (tkn_eq sym)
+
+(* expect_tkns: sym_t list -> token_t list *)
+let expect_tkns syms =
+  expect_mult (List.length syms) (tkns_eq syms)
 
 (* try_f: (unit -> 'a) -> 'a *)
 let try_f f =
@@ -129,6 +127,24 @@ let conv_info info : loc_info2 = match info with
  *    | MINUS INT
  *    | VAR
  *)
+
+exception SNF (* should not happen *)
+
+let num () = match expect_tkn SINT with
+  | INT (n, l) -> Int (n, conv_info l)
+  | _ -> raise SNF
+
+let negative_num () = match expect_tkns [SMINUS; SINT] with
+  | [MINUS (l1); INT (n, l2)] -> Int (-n, merge_info [l1; l2])
+  | _ -> raise SNF
+
+let var () = match expect_tkn SVAR with
+  | VAR (s, l) -> Var (s, conv_info l)
+  | _ -> raise SNF
+
+let int_ () = or_ [num; negative_num]
+
+let value () = or_ [int_; var]
 
 (* main : token_t list -> ast_t *)
 let main ts = ts

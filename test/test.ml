@@ -124,8 +124,27 @@ let () = init_ptr ()
 let lst = Parse.forsee 3
 let () = assert (tkns_eq [SINT; SPLUS; SINT] lst)
 let () = assert (Parse.index () = 0)
+let () = assert (let _ = Parse.expect_mult 3 (tkns_eq [SINT; SPLUS; SINT]) in true)
+let () = init_ptr ()
+let () = assert (let _ = Parse.expect_tkns [SINT; SPLUS] in true)
+let () = assert (let _ = Parse.expect_tkns [SINT] in true)
+
+let s = "   - \n\
+\t   50"
+let ts = Tokenize.main s
+let () = init_status ts
+let e = Parse.negative_num ()
+let info = ((0, 3), (1, 6))
+let () = assert (Int (-50, info)  = e)
+let () = init_ptr ()
+let e = Parse.int_ ()
+let () = assert (Int (-50, info) = e)
+let () = init_ptr ()
+let e = Parse.value ()
+let () = assert (Int (-50, info) = e)
 
 let () = print_endline "<<<<<<<<<<<<<<"
 let () = print_endline "Success"
 let () = print_endline "<<<<<<<<<<<<<<"
 let () = exit 0
+
