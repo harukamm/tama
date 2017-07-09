@@ -1,6 +1,6 @@
 
 let main () => {
-  let elems = <Console.Console id="hoge" />;
+  let elems = <Tama id="tama_main" />;
   ReactDOMRe.renderToElementWithId elems "index";
 };
 
