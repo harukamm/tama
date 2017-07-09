@@ -51,14 +51,14 @@ let e3 = Parse.one_token (0, 0, 0, s1)
 let i3 = (1, (2, 4))
 let s2 = "    \n\
 \t   \n\
-\t    -5000 \n"
+\t    50000 \n"
 let e4 = Parse.one_token (0, 0, 0, s2)
 let i4 = (2, (5, 10))
 
 let () = assert ((8, 0, 8, Types.VAR ("aBCxxx", i1)) = e1)
 let () = assert ((3, 0, 3, Types.PLUS (i2)) = e2)
 let () = assert ((6, 1, 4, Types.VAR ("xx", i3)) = e3)
-let () = assert ((20, 2, 10, Types.INT (-5000, i4)) = e4)
+let () = assert ((20, 2, 10, Types.INT (50000, i4)) = e4)
 
 let s = "5 +  10\n\
 \t-1\n"
@@ -66,8 +66,9 @@ let e = Parse.tokenize s
 let t1 = Types.INT (5, (0, (0, 1)))
 let t2 = Types.PLUS (0, (2, 3))
 let t3 = Types.INT (10, (0, (5, 7)))
-let t4 = Types.INT (-1, (1, (1, 3)))
-let () = assert ([t1; t2; t3; t4] = e)
+let t4 = Types.MINUS (1, (1, 2))
+let t5 = Types.INT (1, (1, (2, 3)))
+let () = assert ([t1; t2; t3; t4; t5] = e)
 
 let s = "  xx - 1 \n\
 \t xb_x \t  *  "

@@ -93,12 +93,8 @@ let skip_word (pt, lno, cno, ss) =
   else
     let get_chr = String.get ss in
     let c = get_chr pt in
-    let has_next = pt + 1 < len in
     if is_num c then
       skip (fun c -> List.mem c num) (pt, lno, cno, ss)
-    else if c = '-' && has_next && (is_num (get_chr (pt + 1))) then
-      let (pt1, lno1, cno1, v) = skip_num (pt + 1, lno, cno + 1, ss) in
-      (pt1, lno1, cno1, "-" ^ v)
     else
       skip_mem words (pt, lno, cno, ss)
 
@@ -109,7 +105,7 @@ let one_token (pt, lno, cno, ss) =
   let len = String.length ss in
   let (pt, lno, cno, _) = skip_spaces (pt, lno, cno, ss) in
   let (pt1, lno1, cno1, word) = skip_word (pt, lno, cno, ss) in
-  let starts_with_num = starts_with_mem word ('-' :: num) in
+  let starts_with_num = starts_with_mem word num in
   match word with
     | "" -> (* is not a word *)
       begin
