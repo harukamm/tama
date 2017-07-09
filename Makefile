@@ -1,4 +1,4 @@
-ORIGS := util.ml types.ml tokenize.ml
+ORIGS := util.ml types.ml tokenize.ml parse.ml
 ORIGS := $(ORIGS:%.ml=src/%.ml)
 STAGED := $(ORIGS:src/%.ml=test/%.ml)
 SOURCES := $(STAGED)

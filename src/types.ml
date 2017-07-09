@@ -26,6 +26,26 @@ type app_states_t = {
   text: string
 }
 
+type sym_t =
+  | SINT
+  | SVAR
+  | SPLUS
+  | SMINUS
+  | STIMES
+  | SDIVIDE
+
+let tkn_eq sym t = match (sym, t) with
+  | (SINT, INT _) | (SVAR, VAR _)
+  | (SPLUS, PLUS _) | (SMINUS, MINUS _)
+  | (STIMES, TIMES _) | (SDIVIDE, DIVIDE _) -> true
+  | _ -> false
+
+let rec tkns_eq syms ts = match (syms,  ts) with
+  | ([], []) -> true
+  | (x :: xs, []) -> false
+  | ([], y :: ys) -> false
+  | (x :: xs, y :: ys) -> (tkn_eq x y) && (tkns_eq xs ys)
+
 let soli (l : loc_info) = match l with
   (ln, (s, e)) ->
     "line:" ^ (string_of_int ln) ^ " col:" ^ (string_of_int s) ^ ":" ^ (string_of_int e)

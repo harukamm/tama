@@ -1,6 +1,7 @@
 #load "util.cmo";;
 #load "types.cmo";;
 #load "tokenize.cmo";;
+#load "parse.cmo";;
 
 open Types;;
 
@@ -91,6 +92,38 @@ let e =
     false
   with Tokenize_Error (str, inf) -> str = "@xx@@" && inf = info
 let () = assert e
+
+
+(* Parse test *)
+let init_ptr () = Parse.set 0
+let init_tkn ts = Parse.set_tkn (Array.of_list ts)
+let init_status ts =
+  let _ = init_ptr () in
+  let _ = init_tkn ts in ()
+
+let is_int = tkn_eq SINT
+let is_var = tkn_eq SVAR
+let is_plus = tkn_eq SPLUS
+let is_minus = tkn_eq SMINUS
+let is_times = tkn_eq STIMES
+let is_divide = tkn_eq SDIVIDE
+
+let ts = Tokenize.main " 5 + 10 "
+let () = init_status ts
+let () = assert (is_int (Parse.expect is_int))
+let () = assert (is_plus (Parse.expect is_plus))
+let () = assert (is_int (Parse.expect is_int))
+let b =
+  try
+    let _ = Parse.expect is_plus in
+    false
+  with Parse.Out_of_Index -> true
+let () = assert b
+
+let () = init_ptr ()
+let lst = Parse.forsee 3
+let () = assert (tkns_eq [SINT; SPLUS; SINT] lst)
+let () = assert (Parse.index () = 0)
 
 let () = print_endline "<<<<<<<<<<<<<<"
 let () = print_endline "Success"
