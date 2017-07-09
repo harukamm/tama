@@ -80,6 +80,16 @@ let t4 = Types.VAR ("xb_x", (1, (2, 6)))
 let t5 = Types.TIMES (1, (10, 11))
 let () = assert ([t1; t2; t3; t4; t5] = e)
 
+let s = " / \n\
+\t  @xx@@  "
+let info = (1, (3, 8))
+let e =
+  try
+    let _ = Tokenize.tokenize s in
+    false
+  with Types.Tokenize_Error (str, inf) -> str = "@xx@@" && inf = info
+let () = assert e
+
 let () = print_endline "<<<<<<<<<<<<<<"
 let () = print_endline "Success"
 let () = print_endline "<<<<<<<<<<<<<<"

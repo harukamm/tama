@@ -11,6 +11,8 @@ type ast_t =
   | Times of ast_t * ast_t * loc_info
   | Divide of ast_t * ast_t * loc_info
 
+exception Tokenize_Error of (string * loc_info)
+
 type token_t =
   | INT of int * loc_info
   | VAR of string * loc_info

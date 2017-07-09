@@ -47,6 +47,9 @@ let skip p (ptr, lineno, colno, ss) =
 (* skip_mem: char list -> string state_t -> string state_t *)
 let skip_mem cs = skip (fun c -> List.mem c cs)
 
+(* skip_not_mem: char list -> string state_t -> string state_t *)
+let skip_not_mem cs = skip (fun c -> not (List.mem c cs))
+
 (* spaces: char list *)
 let spaces = ['\n'; '\r'; ' '; '\t']
 
@@ -73,6 +76,9 @@ let words = '_' :: lowers @ uppers @ num
 let is_num c = List.mem c num
 (* skip_num: string state_t -> string state_t *)
 let skip_num = skip_mem num
+
+(* until_spaces: string state_t -> string state_t *)
+let until_spaces = skip_not_mem spaces
 
 (* consist_of: string -> char list -> bool *)
 let all_mem s cs = List.for_all (fun c -> List.mem c cs) (string_to_clst s)
@@ -118,7 +124,10 @@ let one_token (pt, lno, cno, ss) =
             | '-' -> (pt1 + 1, lno1, cno1 + 1, MINUS (info))
             | '*' -> (pt1 + 1, lno1, cno1 + 1, TIMES (info))
             | '/' -> (pt1 + 1, lno1, cno1 + 1, DIVIDE (info))
-            | _ -> failwith (String.make 1 c)
+            | _ ->
+              let (pt2, lno2, cno2, str) = until_spaces (pt1, lno1, cno1, ss) in
+              let info = (lno2, (cno1, cno2)) in
+              (raise (Tokenize_Error (str, info)))
        end
     | _ when starts_with_num ->
       let len = pt1 - pt in
