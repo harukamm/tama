@@ -40,6 +40,14 @@ type sym_t =
   | STIMES
   | SDIVIDE
 
+let sym_of_token t = match t with
+  | INT _ -> SINT
+  | VAR _ -> SVAR
+  | PLUS _ -> SPLUS
+  | MINUS _ -> SMINUS
+  | TIMES _ -> STIMES
+  | DIVIDE _ -> SDIVIDE
+
 let tkn_eq sym t = match (sym, t) with
   | (SINT, INT _) | (SVAR, VAR _)
   | (SPLUS, PLUS _) | (SMINUS, MINUS _)

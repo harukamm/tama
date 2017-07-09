@@ -143,6 +143,41 @@ let () = init_ptr ()
 let e = Parse.value ()
 let () = assert (Int (-50, info) = e)
 
+let s = " 5 - 1 - 2"
+let ts = Tokenize.main s
+let () = init_status ts
+let e = Parse.expr ()
+let x1 = Int (5, ((0, 1), (0, 2)))
+let x2 = Int (1, ((0, 5), (0, 6)))
+let x3 = Int (2, ((0, 9), (0, 10)))
+let x = Minus (Minus (x1, x2, ((0, 1), (0, 6))), x3, ((0, 1), (0, 10)))
+let () = assert (x = e)
+
+let s = " 5 + 4 * - 1 "
+let ts = Tokenize.main s
+let () = init_status ts
+let e = Parse.expr ()
+let x1 = Int (4, ((0, 5), (0, 6)))
+let x2 = Int (-1, ((0, 9), (0, 12)))
+let x3 = Times (x1, x2, ((0, 5), (0, 12)))
+let x4 = Int (5, ((0, 1), (0, 2)))
+let x5 = Plus (x4, x3, ((0, 1), (0, 12)))
+let () = assert (x5 = e)
+
+let s = " 10 / 2 * 3 \n\
++ 5"
+let ts = Tokenize.main s
+let () = init_status ts
+let e = Parse.expr ()
+let x1 = Int (10, ((0, 1), (0, 3)))
+let x2 = Int (2, ((0, 6), (0, 7)))
+let x3 = Int (3, ((0, 10), (0, 11)))
+let x4 = Int (5, ((1, 2), (1, 3)))
+let x5 = Divide (x1, x2, ((0, 1), (0, 7)))
+let x6 = Times (x5, x3, ((0, 1), (0, 11)))
+let x7 = Plus (x6, x4, ((0, 1), (1, 3)))
+let () = assert (x7 = e)
+
 let () = print_endline "<<<<<<<<<<<<<<"
 let () = print_endline "Success"
 let () = print_endline "<<<<<<<<<<<<<<"

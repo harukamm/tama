@@ -67,6 +67,15 @@ let expect_tkn sym = expect (tkn_eq sym)
 let expect_tkns syms =
   expect_mult (List.length syms) (tkns_eq syms)
 
+(* expect_tkn_or: sym_t list -> token_t *)
+let rec expect_tkn_or syms = match syms with
+  | [] ->
+    raise (Not_Found_Match "expect_mult")
+  | x :: xs ->
+    try
+      expect_tkn x
+    with Unexpected _ -> expect_tkn_or xs
+
 (* try_f: (unit -> 'a) -> 'a *)
 let try_f f =
   let pt = index () in
@@ -80,14 +89,34 @@ let rec many f =
     e :: (many f)
   with e -> []
 
-(* or_: (unit -> 'a) list -> 'a *)
-let rec or_ fs = match fs with
+(* many1: (unit -> 'a) -> 'a list *)
+let many1 f =
+  let ind = index () in
+  let xs = many f in
+  if xs = [] then (set ind; raise (Not_Found_Match "many1"))
+  else xs
+
+(* or_: string ->  (unit -> 'a) list -> 'a *)
+let rec or_ name fs = match fs with
   | [] ->
-    raise (Not_Found_Match "or_")
+    raise (Not_Found_Match ("or_ " ^ name))
   | f :: rest ->
     try
       try_f f
-    with Unexpected _ -> or_ rest
+    with _ -> or_ name rest
+
+(* and_: (unit -> 'a) list -> 'a list *)
+let and_ fs =
+  let ind = index () in
+  let rec h lst = match lst with
+  | [] ->
+    []
+  | f :: rest ->
+    let e = f () in
+    e :: (h rest)
+  in try
+       h fs
+     with e -> set ind; raise e
 
 let valid_info info =
   let rec h pl pce lst = match lst with
@@ -95,6 +124,15 @@ let valid_info info =
       true
     | (l, (c1, c2)) :: rest ->
       ((pl = l && pce <= c1) || pl < l) && (h l c2 rest)
+  in
+  info != [] && (h (-1) (-1) info)
+
+let valid_ast_info info =
+  let rec h pl pce lst = match lst with
+    | [] ->
+      true
+    | ((ls, cs), (le, ce)) :: rest ->
+      (((pl = ls) && pce < cs) || pl < ls) && (h le ce rest)
   in
   info != [] && (h (-1) (-1) info)
 
@@ -106,22 +144,40 @@ let merge_info info : loc_info2 =
   let (l2, (cs2, ce2)) = List.nth info (len - 1) in
   ((l1, cs1), (l2, ce2))
 
+let merge_ast_info info : loc_info2 =
+  let is_valid = valid_ast_info info in
+  let _ = if not is_valid then failwith "Cannot merge invalid location-info2" in
+  let len = List.length info in
+  let ((ls1, cs1), (le1, ce1)) = List.hd info in
+  let ((ls2, cs2), (le2, ce2)) = List.nth info (len - 1) in
+  ((ls1, cs1), (le2, ce2))
+
 let conv_info info : loc_info2 = match info with
   (l, (cs, ce)) -> ((l, cs), (l, ce))
 
+let get_ast_info t = match t with
+  | Int (_, l) -> l
+  | Var (_, l) -> l
+  | Plus (_, _, l) -> l
+  | Minus (_, _, l) -> l
+  | Times (_, _, l) -> l
+  | Divide (_, _, l) -> l
+
+let get_merge_info ts =
+  let info_lst = List.map get_ast_info ts in
+  merge_ast_info info_lst
+
 (*
- * e := t PLUS e
- *    | t MINUS e
+ * e := e PLUS t
+ *    | e MINUS t
  *    | t
  *
- * t := f TIMES t
+ * t := t TIMES f
  *    | t DIVIDE f
  *    | f
  *
  * f := LPAREN e RPAREN
- *    | INT
- *    | MINUS INT
- *    | VAR
+ *    | v
  *
  * v := INT
  *    | MINUS INT
@@ -129,7 +185,6 @@ let conv_info info : loc_info2 = match info with
  *)
 
 exception SNF (* should not happen *)
-
 let num () = match expect_tkn SINT with
   | INT (n, l) -> Int (n, conv_info l)
   | _ -> raise SNF
@@ -142,9 +197,37 @@ let var () = match expect_tkn SVAR with
   | VAR (s, l) -> Var (s, conv_info l)
   | _ -> raise SNF
 
-let int_ () = or_ [num; negative_num]
+let int_ () = or_ "int_" [num; negative_num]
+let value () = or_ "value" [int_; var]
 
-let value () = or_ [int_; var]
+let rec expr () =
+  let t1 = term () in
+  let f_1 () =
+    let ts = many1 (fun () ->
+                     let op = expect_tkn_or [SPLUS; SMINUS] in
+                     let t = term () in (op, t))
+  in
+    List.fold_left (fun tr (op, t) ->
+                     if tkn_eq SPLUS op then Plus (tr, t, get_merge_info [tr; t])
+                     else Minus (tr, t, get_merge_info [tr; t])) t1 ts
+  in
+  or_ "expr" [f_1; (fun () -> t1)]
+
+and term () =
+  let f1 = factor () in
+  let f_1 () =
+    let fs = many1 (fun () ->
+                     let op = expect_tkn_or [STIMES; SDIVIDE] in
+                     let f = factor () in (op, f))
+  in
+    List.fold_left (fun tr (op, t) ->
+                     if tkn_eq STIMES op then Times (tr, t, get_merge_info [tr; t])
+                     else Divide (tr, t, get_merge_info [tr; t])) f1 fs
+  in
+  or_ "term" [f_1; (fun () -> f1)]
+
+and factor () =
+  value ()
 
 (* main : token_t list -> ast_t *)
 let main ts = ts
