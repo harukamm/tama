@@ -156,6 +156,3 @@ let main input =
   let ts = token_loop (0, 0, 0, input) in
 (*  let _ = print_endline (Util.string_of_tokens ts) in *)
   ts
-
-(* tokenize : string -> Types.token_t list *)
-let tokenize s = main s

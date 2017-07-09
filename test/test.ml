@@ -62,7 +62,7 @@ let () = assert ((20, 2, 10, Types.INT (50000, i4)) = e4)
 
 let s = "5 +  10\n\
 \t-1\n"
-let e = Tokenize.tokenize s
+let e = Tokenize.main s
 let t1 = Types.INT (5, (0, (0, 1)))
 let t2 = Types.PLUS (0, (2, 3))
 let t3 = Types.INT (10, (0, (5, 7)))
@@ -72,7 +72,7 @@ let () = assert ([t1; t2; t3; t4; t5] = e)
 
 let s = "  xx - 1 \n\
 \t xb_x \t  *  "
-let e = Tokenize.tokenize s
+let e = Tokenize.main s
 let t1 = Types.VAR ("xx", (0, (2, 4)))
 let t2 = Types.MINUS (0, (5, 6))
 let t3 = Types.INT (1, (0, (7, 8)))
@@ -85,7 +85,7 @@ let s = " / \n\
 let info = (1, (3, 8))
 let e =
   try
-    let _ = Tokenize.tokenize s in
+    let _ = Tokenize.main s in
     false
   with Types.Tokenize_Error (str, inf) -> str = "@xx@@" && inf = info
 let () = assert e
