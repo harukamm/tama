@@ -184,18 +184,18 @@ let get_merge_info ts =
  *    | VAR
  *)
 
-exception SNF (* should not happen *)
+exception SNH (* should not happen *)
 let num () = match expect_tkn SINT with
   | INT (n, l) -> Int (n, conv_info l)
-  | _ -> raise SNF
+  | _ -> raise SNH
 
 let negative_num () = match expect_tkns [SMINUS; SINT] with
   | [MINUS (l1); INT (n, l2)] -> Int (-n, merge_info [l1; l2])
-  | _ -> raise SNF
+  | _ -> raise SNH
 
 let var () = match expect_tkn SVAR with
   | VAR (s, l) -> Var (s, conv_info l)
-  | _ -> raise SNF
+  | _ -> raise SNH
 
 let int_ () = or_ "int_" [num; negative_num]
 let value () = or_ "value" [int_; var]
