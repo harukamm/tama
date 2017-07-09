@@ -124,6 +124,8 @@ let one_token (pt, lno, cno, ss) =
             | '-' -> (pt1 + 1, lno1, cno1 + 1, MINUS (info))
             | '*' -> (pt1 + 1, lno1, cno1 + 1, TIMES (info))
             | '/' -> (pt1 + 1, lno1, cno1 + 1, DIVIDE (info))
+            | '(' -> (pt1 + 1, lno1, cno1 + 1, LPAREN (info))
+            | ')' -> (pt1 + 1, lno1, cno1 + 1, RPAREN (info))
             | _ ->
               let (pt2, lno2, cno2, str) = until_spaces (pt1, lno1, cno1, ss) in
               let info = (lno2, (cno1, cno2)) in

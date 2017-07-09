@@ -26,6 +26,8 @@ type token_t =
   | MINUS of loc_info
   | TIMES of loc_info
   | DIVIDE of loc_info
+  | LPAREN of loc_info
+  | RPAREN of loc_info
 
 type app_states_t = {
   is_executing: bool;
@@ -39,6 +41,8 @@ type sym_t =
   | SMINUS
   | STIMES
   | SDIVIDE
+  | SLPAREN
+  | SRPAREN
 
 let sym_of_token t = match t with
   | INT _ -> SINT
@@ -47,12 +51,12 @@ let sym_of_token t = match t with
   | MINUS _ -> SMINUS
   | TIMES _ -> STIMES
   | DIVIDE _ -> SDIVIDE
+  | LPAREN _ -> SLPAREN
+  | RPAREN _ -> SRPAREN
 
-let tkn_eq sym t = match (sym, t) with
-  | (SINT, INT _) | (SVAR, VAR _)
-  | (SPLUS, PLUS _) | (SMINUS, MINUS _)
-  | (STIMES, TIMES _) | (SDIVIDE, DIVIDE _) -> true
-  | _ -> false
+let tkn_eq sym t =
+  let sym' = sym_of_token t in
+  sym = sym'
 
 let rec tkn_mem syms t = match syms with
   | [] -> false
@@ -72,6 +76,32 @@ let soli2 (l : loc_info2) = match l with
   ((ls, cs), (le, ce)) ->
     "start:" ^ (string_of_int ls) ^ "," ^ (string_of_int cs) ^ ":" ^
       (string_of_int le) ^ "," ^ (string_of_int ce)
+
+let get_tkn_info t = match t with
+  | INT (_, l) -> l
+  | VAR (_, l) -> l
+  | PLUS (l) -> l
+  | MINUS (l) -> l
+  | TIMES (l) -> l
+  | DIVIDE (l) -> l
+  | LPAREN (l) -> l
+  | RPAREN (l) -> l
+
+let get_ast_info t = match t with
+  | Int (_, l) -> l
+  | Var (_, l) -> l
+  | Plus (_, _, l) -> l
+  | Minus (_, _, l) -> l
+  | Times (_, _, l) -> l
+  | Divide (_, _, l) -> l
+
+let set_ast_info t l = match t with
+  | Int (t, _) -> Int (t, l)
+  | Var (t, _) -> Var (t, l)
+  | Plus (t1, t2, _) -> Plus (t1, t2, l)
+  | Minus (t1, t2, _) -> Minus (t1, t2, l)
+  | Times (t1, t2, _) -> Times (t1, t2, l)
+  | Divide (t1, t2, _) -> Divide (t1, t2, l)
 
 let rec soa t = match t with
   | Int (i, l) ->
@@ -100,6 +130,10 @@ let sot t = match t with
     "TIMES (" ^ (soli l) ^ ")"
   | DIVIDE (l) ->
     "DIVIDE (" ^ (soli l) ^ ")"
+  | LPAREN (l) ->
+    "LRAREN (" ^ (soli l) ^ ")"
+  | RPAREN (l) ->
+    "RPAREN (" ^ (soli l) ^ ")"
 
 let string_of_linfo = soli
 

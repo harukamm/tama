@@ -178,6 +178,18 @@ let x6 = Times (x5, x3, ((0, 1), (0, 11)))
 let x7 = Plus (x6, x4, ((0, 1), (1, 3)))
 let () = assert (x7 = e)
 
+let s = " 10 / 5 / (1 - (2))"
+let ts = Tokenize.main s
+let () = init_status ts
+let e = Parse.expr ()
+let x1 = Int (10, ((0, 1), (0, 3)))
+let x2 = Int (5, ((0, 6), (0, 7)))
+let x3 = Int (1, ((0, 11), (0, 12)))
+let x4 = Int (2, ((0, 15), (0, 18)))
+let x5 = Divide (x1, x2, ((0, 1), (0, 7)))
+let x6 = Minus (x3, x4, ((0, 11), (0, 18)))
+let x7 = Divide (x5, x6, ((0, 1), (0, 19)))
+
 let () = print_endline "<<<<<<<<<<<<<<"
 let () = print_endline "Success"
 let () = print_endline "<<<<<<<<<<<<<<"
