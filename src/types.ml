@@ -3,13 +3,19 @@ type loc_info =
   * (int         (* colno of start *)
    * int)        (* colno of end *)
 
+type loc_info2 =
+  (int           (* lineno of start *)
+    * int)       (* colno of start *)
+  * (int         (* lineno of end *)
+      * int)     (* colno of end *)
+
 type ast_t =
-  | Int of int * loc_info
-  | Var of string * loc_info
-  | Plus of ast_t * ast_t * loc_info
-  | Minus of ast_t * ast_t * loc_info
-  | Times of ast_t * ast_t * loc_info
-  | Divide of ast_t * ast_t * loc_info
+  | Int of int * loc_info2
+  | Var of string * loc_info2
+  | Plus of ast_t * ast_t * loc_info2
+  | Minus of ast_t * ast_t * loc_info2
+  | Times of ast_t * ast_t * loc_info2
+  | Divide of ast_t * ast_t * loc_info2
 
 exception Tokenize_Error of (string * loc_info)
 
@@ -50,19 +56,24 @@ let soli (l : loc_info) = match l with
   (ln, (s, e)) ->
     "line:" ^ (string_of_int ln) ^ " col:" ^ (string_of_int s) ^ ":" ^ (string_of_int e)
 
+let soli2 (l : loc_info2) = match l with
+  ((ls, cs), (le, ce)) ->
+    "start:" ^ (string_of_int ls) ^ "," ^ (string_of_int cs) ^ ":" ^
+      (string_of_int le) ^ "," ^ (string_of_int ce)
+
 let rec soa t = match t with
   | Int (i, l) ->
-    "Int (" ^ (string_of_int i) ^ ", " ^ (soli l) ^")"
+    "Int (" ^ (string_of_int i) ^ ", " ^ (soli2 l) ^ ")"
   | Var (s, l) ->
-    "Var (" ^ s ^ ", " ^ (soli l) ^ ")"
+    "Var (" ^ s ^ ", " ^ (soli2 l) ^ ")"
   | Plus (e1, e2, l) ->
-    "Plus (" ^ (soa e1) ^ ", " ^ (soa e2) ^ ", " ^ (soli l) ^ ")"
+    "Plus (" ^ (soa e1) ^ ", " ^ (soa e2) ^ ", " ^ (soli2 l) ^ ")"
   | Minus (e1, e2, l) ->
-    "Minus (" ^ (soa e1) ^ ", " ^ (soa e2) ^ ", " ^ (soli l) ^ ")"
+    "Minus (" ^ (soa e1) ^ ", " ^ (soa e2) ^ ", " ^ (soli2 l) ^ ")"
   | Times (e1, e2, l) ->
-    "Times (" ^ (soa e1) ^ ", " ^ (soa e2) ^ ", " ^ (soli l) ^ ")"
+    "Times (" ^ (soa e1) ^ ", " ^ (soa e2) ^ ", " ^ (soli2 l) ^ ")"
   | Divide (e1, e2, l) ->
-    "Divide (" ^ (soa e1) ^ ", " ^ (soa e2) ^ ", " ^ (soli l) ^ ")"
+    "Divide (" ^ (soa e1) ^ ", " ^ (soa e2) ^ ", " ^ (soli2 l) ^ ")"
 
 let sot t = match t with
   | INT (i, l) ->

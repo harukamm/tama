@@ -91,6 +91,26 @@ let rec or_ fs = match fs with
       try_f f
     with Unexpected _ -> or_ rest
 
+let valid_info info =
+  let rec h pl pce lst = match lst with
+    | [] ->
+      true
+    | (l, (c1, c2)) :: rest ->
+      ((pl = l && pce <= c1) || pl < l) && (h l c2 rest)
+  in
+  info != [] && (h (-1) (-1) info)
+
+let merge_info info : loc_info2 =
+  let is_valid = valid_info info in
+  let _ = if not is_valid then failwith "Cannot merge invalid location-info" in
+  let len = List.length info in
+  let (l1, (cs1, ce1)) = List.hd info in
+  let (l2, (cs2, ce2)) = List.nth info (len - 1) in
+  ((l1, cs1), (l2, ce2))
+
+let conv_info info : loc_info2 = match info with
+  (l, (cs, ce)) -> ((l, cs), (l, ce))
+
 (*
  * e := t PLUS e
  *    | t MINUS e
