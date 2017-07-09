@@ -2,6 +2,8 @@
 #load "types.cmo";;
 #load "tokenize.cmo";;
 
+open Types;;
+
 let () = print_endline ">>>>>>>>>>>>>>>"
 let () = print_endline " Testing..."
 let () = print_endline ">>>>>>>>>>>>>>>"
@@ -55,29 +57,29 @@ let s2 = "    \n\
 let e4 = Tokenize.one_token (0, 0, 0, s2)
 let i4 = (2, (5, 10))
 
-let () = assert ((8, 0, 8, Types.VAR ("aBCxxx", i1)) = e1)
-let () = assert ((3, 0, 3, Types.PLUS (i2)) = e2)
-let () = assert ((6, 1, 4, Types.VAR ("xx", i3)) = e3)
-let () = assert ((20, 2, 10, Types.INT (50000, i4)) = e4)
+let () = assert ((8, 0, 8, VAR ("aBCxxx", i1)) = e1)
+let () = assert ((3, 0, 3, PLUS (i2)) = e2)
+let () = assert ((6, 1, 4, VAR ("xx", i3)) = e3)
+let () = assert ((20, 2, 10, INT (50000, i4)) = e4)
 
 let s = "5 +  10\n\
 \t-1\n"
 let e = Tokenize.main s
-let t1 = Types.INT (5, (0, (0, 1)))
-let t2 = Types.PLUS (0, (2, 3))
-let t3 = Types.INT (10, (0, (5, 7)))
-let t4 = Types.MINUS (1, (1, 2))
-let t5 = Types.INT (1, (1, (2, 3)))
+let t1 = INT (5, (0, (0, 1)))
+let t2 = PLUS (0, (2, 3))
+let t3 = INT (10, (0, (5, 7)))
+let t4 = MINUS (1, (1, 2))
+let t5 = INT (1, (1, (2, 3)))
 let () = assert ([t1; t2; t3; t4; t5] = e)
 
 let s = "  xx - 1 \n\
 \t xb_x \t  *  "
 let e = Tokenize.main s
-let t1 = Types.VAR ("xx", (0, (2, 4)))
-let t2 = Types.MINUS (0, (5, 6))
-let t3 = Types.INT (1, (0, (7, 8)))
-let t4 = Types.VAR ("xb_x", (1, (2, 6)))
-let t5 = Types.TIMES (1, (10, 11))
+let t1 = VAR ("xx", (0, (2, 4)))
+let t2 = MINUS (0, (5, 6))
+let t3 = INT (1, (0, (7, 8)))
+let t4 = VAR ("xb_x", (1, (2, 6)))
+let t5 = TIMES (1, (10, 11))
 let () = assert ([t1; t2; t3; t4; t5] = e)
 
 let s = " / \n\
@@ -87,7 +89,7 @@ let e =
   try
     let _ = Tokenize.main s in
     false
-  with Types.Tokenize_Error (str, inf) -> str = "@xx@@" && inf = info
+  with Tokenize_Error (str, inf) -> str = "@xx@@" && inf = info
 let () = assert e
 
 let () = print_endline "<<<<<<<<<<<<<<"
