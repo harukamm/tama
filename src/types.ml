@@ -1,7 +1,7 @@
 type loc_info =
   int            (* lineno *)
-  * int          (* colno of start *)
-  * int          (* colno of end *)
+  * (int         (* colno of start *)
+   * int)        (* colno of end *)
 
 type ast_t =
   | Int of int * loc_info
@@ -25,7 +25,7 @@ type app_states_t = {
 }
 
 let soli (l : loc_info) = match l with
-  (ln, s, e) ->
+  (ln, (s, e)) ->
     "line:" ^ (string_of_int ln) ^ " col:" ^ (string_of_int s) ^ ":" ^ (string_of_int e)
 
 let rec soa t = match t with
