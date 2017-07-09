@@ -64,8 +64,8 @@ let rec tkn_mem syms t = match syms with
 
 let rec tkns_eq syms ts = match (syms,  ts) with
   | ([], []) -> true
-  | (x :: xs, []) -> false
-  | ([], y :: ys) -> false
+  | (_ :: _, []) -> false
+  | ([], _ :: _) -> false
   | (x :: xs, y :: ys) -> (tkn_eq x y) && (tkns_eq xs ys)
 
 let soli (l : loc_info) = match l with

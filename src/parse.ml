@@ -87,7 +87,7 @@ let rec many f =
   try
     let e = try_f f in
     e :: (many f)
-  with e -> []
+  with _ -> []
 
 (* many1: (unit -> 'a) -> 'a list *)
 let many1 f =
@@ -140,16 +140,16 @@ let merge_tkn_info info : loc_info2 =
   let is_valid = valid_info info in
   let _ = if not is_valid then failwith "Cannot merge invalid location-info" in
   let len = List.length info in
-  let (l1, (cs1, ce1)) = List.hd info in
-  let (l2, (cs2, ce2)) = List.nth info (len - 1) in
+  let (l1, (cs1, _)) = List.hd info in
+  let (l2, (_, ce2)) = List.nth info (len - 1) in
   ((l1, cs1), (l2, ce2))
 
 let merge_ast_info info : loc_info2 =
   let is_valid = valid_ast_info info in
   let _ = if not is_valid then failwith "Cannot merge invalid location-info2" in
   let len = List.length info in
-  let ((ls1, cs1), (le1, ce1)) = List.hd info in
-  let ((ls2, cs2), (le2, ce2)) = List.nth info (len - 1) in
+  let ((ls1, cs1), (_, _)) = List.hd info in
+  let ((_, _), (le2, ce2)) = List.nth info (len - 1) in
   ((ls1, cs1), (le2, ce2))
 
 let conv_info info : loc_info2 = match info with
