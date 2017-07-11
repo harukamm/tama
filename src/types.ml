@@ -1,26 +1,19 @@
 type loc_info =
-  int            (* lineno *)
-  * (int         (* colno of start *)
-   * int)        (* colno of end *)
-
-type loc_info2 =
-  (int           (* lineno of start *)
-    * int)       (* colno of start *)
-  * (int         (* lineno of end *)
-      * int)     (* colno of end *)
+  int            (* start *)
+  * int          (* end   *)
 
 type ast_t =
-  | Int of int * loc_info2
-  | Var of string * loc_info2
-  | Plus of ast_t * ast_t * loc_info2
-  | Minus of ast_t * ast_t * loc_info2
-  | Times of ast_t * ast_t * loc_info2
-  | Divide of ast_t * ast_t * loc_info2
-  | Comment of string * loc_info2
+  | Int of int * loc_info
+  | Var of string * loc_info
+  | Plus of ast_t * ast_t * loc_info
+  | Minus of ast_t * ast_t * loc_info
+  | Times of ast_t * ast_t * loc_info
+  | Divide of ast_t * ast_t * loc_info
+  | Comment of string * loc_info
 
 exception Tokenize_Error of (string * loc_info)
 
-exception Comment_Not_Terminated of loc_info2
+exception Comment_Not_Terminated of loc_info
 
 type token_t =
   | INT of int * loc_info
@@ -31,7 +24,7 @@ type token_t =
   | DIVIDE of loc_info
   | LPAREN of loc_info
   | RPAREN of loc_info
-  | COMMENT of string * loc_info2
+  | COMMENT of string * loc_info
 
 type app_states_t = {
   is_executing: bool;
@@ -75,13 +68,8 @@ let rec tkns_eq syms ts = match (syms,  ts) with
   | (x :: xs, y :: ys) -> (tkn_eq x y) && (tkns_eq xs ys)
 
 let soli (l : loc_info) = match l with
-  (ln, (s, e)) ->
-    "line:" ^ (string_of_int ln) ^ " col:" ^ (string_of_int s) ^ ":" ^ (string_of_int e)
-
-let soli2 (l : loc_info2) = match l with
-  ((ls, cs), (le, ce)) ->
-    "start:" ^ (string_of_int ls) ^ "," ^ (string_of_int cs) ^ ":" ^
-      (string_of_int le) ^ "," ^ (string_of_int ce)
+  (s, e) ->
+    (string_of_int s) ^ ":" ^ (string_of_int e)
 
 let get_tkn_info t = match t with
   | INT (_, l) -> l
@@ -92,7 +80,7 @@ let get_tkn_info t = match t with
   | DIVIDE (l) -> l
   | LPAREN (l) -> l
   | RPAREN (l) -> l
-  | COMMENT _ -> failwith "token COMMENT has location-info2"
+  | COMMENT (_, l) -> l
 
 let get_ast_info t = match t with
   | Int (_, l) -> l
@@ -114,19 +102,19 @@ let set_ast_info t l = match t with
 
 let rec soa t = match t with
   | Int (i, l) ->
-    "Int (" ^ (string_of_int i) ^ ", " ^ (soli2 l) ^ ")"
+    "Int (" ^ (string_of_int i) ^ ", " ^ (soli l) ^ ")"
   | Var (s, l) ->
-    "Var (" ^ s ^ ", " ^ (soli2 l) ^ ")"
+    "Var (" ^ s ^ ", " ^ (soli l) ^ ")"
   | Plus (e1, e2, l) ->
-    "Plus (" ^ (soa e1) ^ ", " ^ (soa e2) ^ ", " ^ (soli2 l) ^ ")"
+    "Plus (" ^ (soa e1) ^ ", " ^ (soa e2) ^ ", " ^ (soli l) ^ ")"
   | Minus (e1, e2, l) ->
-    "Minus (" ^ (soa e1) ^ ", " ^ (soa e2) ^ ", " ^ (soli2 l) ^ ")"
+    "Minus (" ^ (soa e1) ^ ", " ^ (soa e2) ^ ", " ^ (soli l) ^ ")"
   | Times (e1, e2, l) ->
-    "Times (" ^ (soa e1) ^ ", " ^ (soa e2) ^ ", " ^ (soli2 l) ^ ")"
+    "Times (" ^ (soa e1) ^ ", " ^ (soa e2) ^ ", " ^ (soli l) ^ ")"
   | Divide (e1, e2, l) ->
-    "Divide (" ^ (soa e1) ^ ", " ^ (soa e2) ^ ", " ^ (soli2 l) ^ ")"
+    "Divide (" ^ (soa e1) ^ ", " ^ (soa e2) ^ ", " ^ (soli l) ^ ")"
   | Comment (s, l) ->
-    "Comemnt (" ^ s ^ ", " ^ (soli2 l) ^ ")"
+    "Comemnt (" ^ s ^ ", " ^ (soli l) ^ ")"
 
 let sot t = match t with
   | INT (i, l) ->
@@ -146,7 +134,7 @@ let sot t = match t with
   | RPAREN (l) ->
     "RPAREN (" ^ (soli l) ^ ")"
   | COMMENT (s, l) ->
-    "COMMENT (" ^ s ^ "," ^ (soli2 l) ^ ")"
+    "COMMENT (" ^ s ^ "," ^ (soli l) ^ ")"
 
 let string_of_linfo = soli
 

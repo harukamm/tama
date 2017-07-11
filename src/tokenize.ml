@@ -2,13 +2,7 @@ open Types
 
 type 'a state_t =
   int       (* start index of remaining string *)
-  * int     (* lineno *)
-  * int     (* colno *)
   * 'a      (* string to read, or result buffer *)
-
-let sost (s : string state_t) = match s with
-  | (x, y, z, v) ->
-    "(" ^ (Util.soi x) ^ ", " ^ (Util.soi y) ^ ", " ^ (Util.soi z) ^ "," ^ v ^ ")"
 
 (* is_lb *)
 let is_lb c = c = '\n'
@@ -28,21 +22,19 @@ let rec string_to_clst s =
     c :: (string_to_clst rest)
 
 (* skip : (char -> bool) -> string state_t -> string state_t *)
-let skip p (ptr, lineno, colno, ss) =
+let skip p (ptr, ss) =
   let len = String.length ss in
-  let rec main pt lno cno value =
+  let rec main pt value =
     if len <= pt then
-      (pt, lno, cno, value)
+      (pt, value)
     else
       let c = String.get ss pt in
-      let lno' = if is_lb c then lno + 1 else lno in 
-      let cno' = if is_lb c then 0 else cno + 1 in
-      if p c then main (pt + 1) lno' cno' (c :: value)
-      else (pt, lno, cno, value)
+      if p c then main (pt + 1) (c :: value)
+      else (pt, value)
   in
-  let (npr, nlno, ncno, rvalue) = main ptr lineno colno [] in
+  let (npr, rvalue) = main ptr [] in
   let value = List.rev rvalue in
-  (npr, nlno, ncno, clst_to_string value)
+  (npr, clst_to_string value)
 
 (* skip_mem: char list -> string state_t -> string state_t *)
 let skip_mem cs = skip (fun c -> List.mem c cs)
@@ -98,32 +90,32 @@ let look_back n pt s =
   else String.sub s bpt n
 
 (* skip_comment: string state_t -> string state_t *)
-let skip_comment (pt, lno, cno, s) =
+let skip_comment (pt, s) =
   let len = String.length s in
-  let rec h pt_ lno_ cno_ nested text =
+  let rec h pt_ nested text =
     begin
-      let (pt_1, lno_1, cno_1, cmt) =
-        skip_not_mem ['('; ')'] (pt_, lno_, cno_, s) in
+      let (pt_1, cmt) =
+        skip_not_mem ['('; ')'] (pt_, s) in
       let text = text ^ cmt in
       let nt = look_ahead 2 pt_1 s in
       let bk = look_back 2 pt_1 s in
       if len <= pt_1 then
-        raise (Comment_Not_Terminated ((lno, cno), (lno_1, cno_1)))
+        raise (Comment_Not_Terminated (pt, pt_1))
       else if bk = "*)" && nested = 1 then
-        (pt_1 + 1, lno_1, cno_1 + 1, text ^ ")")
+        (pt_1 + 1, text ^ ")")
       else if nt = "(*" || bk = "*)" then
         let is_open = nt = "(*" in
         let (tail, diff, nested') =
           if is_open then (nt, 2, nested + 1) else (")", 1, nested - 1) in
-        h (pt_1 + diff) lno_1 (cno_1 + diff) nested' (text ^ tail)
+        h (pt_1 + diff) nested' (text ^ tail)
       else
         let c = String.sub s pt_1 1 in
-        h (pt_1 + 1) lno_1 (cno_1 + 1) nested (text ^ c)
+        h (pt_1 + 1) nested (text ^ c)
     end
   in
   let hds = look_ahead 2 pt s in
-  if hds <> "(*" then (pt, lno, cno, "")
-  else h (pt + 2) lno (cno + 2) 1 "(*"
+  if hds <> "(*" then (pt, "")
+  else h (pt + 2) 1 "(*"
 
 (* starts_with: string -> char -> bool *)
 let starts_with s c = 0 < String.length s && String.get s 0 = c
@@ -134,25 +126,25 @@ let rec starts_with_mem s cs = match cs with
   | x :: xs -> starts_with s x || starts_with_mem s xs
 
 (* skip_word: string state_t -> string state_t *)
-let skip_word (pt, lno, cno, ss) =
+let skip_word (pt, ss) =
   let len = String.length ss in
   if len <= pt then
-    (pt, lno, cno, "")
+    (pt, "")
   else
     let get_chr = String.get ss in
     let c = get_chr pt in
     if is_num c then
-      skip (fun c -> List.mem c num) (pt, lno, cno, ss)
+      skip (fun c -> List.mem c num) (pt, ss)
     else
-      skip_mem words (pt, lno, cno, ss)
+      skip_mem words (pt, ss)
 
 exception End_of_input
 
 (* one_token: string state_t -> token_t state_t *)
-let one_token (pt, lno, cno, ss) =
+let one_token (pt, ss) =
   let len = String.length ss in
-  let (pt, lno, cno, _) = skip_spaces (pt, lno, cno, ss) in
-  let (pt1, lno1, cno1, word) = skip_word (pt, lno, cno, ss) in
+  let (pt, _) = skip_spaces (pt, ss) in
+  let (pt1, word) = skip_word (pt, ss) in
   let starts_with_num = starts_with_mem word num in
   match word with
     | "" -> (* is not a word *)
@@ -162,41 +154,39 @@ let one_token (pt, lno, cno, ss) =
           let c = String.get ss pt1 in
           let nxt = pt1 + 1 in
           let myb_cmt = nxt < len && String.get ss nxt = '*' in
-          let info = (lno1, (cno1, cno1 + 1)) in
+          let info = (pt1, pt1 + 1) in
           match c with
-            | '+' -> (pt1 + 1, lno1, cno1 + 1, PLUS (info))
-            | '-' -> (pt1 + 1, lno1, cno1 + 1, MINUS (info))
-            | '*' -> (pt1 + 1, lno1, cno1 + 1, TIMES (info))
-            | '/' -> (pt1 + 1, lno1, cno1 + 1, DIVIDE (info))
-            | ')' -> (pt1 + 1, lno1, cno1 + 1, RPAREN (info))
+            | '+' -> (pt1 + 1, PLUS (info))
+            | '-' -> (pt1 + 1, MINUS (info))
+            | '*' -> (pt1 + 1, TIMES (info))
+            | '/' -> (pt1 + 1, DIVIDE (info))
+            | ')' -> (pt1 + 1, RPAREN (info))
             | '(' ->
-              if not myb_cmt then (pt1 + 1, lno1, cno1 + 1, LPAREN (info))
+              if not myb_cmt then (pt1 + 1, LPAREN (info))
               else
-                let (pt2, lno2, cno2, cmt) = skip_comment (pt1, lno1, cno1, ss) in
-                let info = ((lno1, cno1), (lno2, cno2)) in
-                (pt2, lno2, cno2, COMMENT (cmt, info))
+                let (pt2, cmt) = skip_comment (pt1, ss) in
+                let info = (pt1, pt2) in
+                (pt2, COMMENT (cmt, info))
             | _ ->
-              let (_, lno2, cno2, str) = until_spaces (pt1, lno1, cno1, ss) in
-              let info = (lno2, (cno1, cno2)) in
+              let (pt2, str) = until_spaces (pt1, ss) in
+              let info = (pt1, pt2) in
               (raise (Tokenize_Error (str, info)))
        end
     | _ when starts_with_num ->
-      let len = pt1 - pt in
-      let info = (lno1, (cno, cno + len)) in
-      (pt1, lno1, cno1, INT (int_of_string word, info))
+      let info = (pt, pt1) in
+      (pt1, INT (int_of_string word, info))
     | _ ->
-      let len = pt1 - pt in
-      let info = (lno1, (cno, cno + len)) in
-      (pt1, lno1, cno1, VAR (word, info))
+      let info = (pt, pt1) in
+      (pt1, VAR (word, info))
 
 (* token_loop: string state_t -> token_t list *)
-let rec token_loop (pt, lno, cno, ss) =
+let rec token_loop (pt, ss) =
   let len = String.length ss in
   try
     begin
       if pt < len then
-        let (pt1, lno1, cno1, t) = one_token (pt, lno, cno, ss) in
-        t :: (token_loop (pt1, lno1, cno1, ss))
+        let (pt1, t) = one_token (pt, ss) in
+        t :: (token_loop (pt1, ss))
       else []
     end
   with End_of_input -> []
@@ -204,6 +194,6 @@ let rec token_loop (pt, lno, cno, ss) =
 
 (* tokenize_main : string -> token_t list *)
 let main input =
-  let ts = token_loop (0, 0, 0, input) in
+  let ts = token_loop (0, input) in
 (*  let _ = print_endline (Util.string_of_tokens ts) in *)
   ts
