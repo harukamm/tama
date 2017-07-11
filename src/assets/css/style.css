@@ -22,6 +22,7 @@
 
 .text_field .highlights {
   color: transparent;
+  word-wrap: break-word;
 }
 
 .text_field .highlights mark {
@@ -49,7 +50,7 @@
 }
 
 .text_field.container, .text_field .backdrop, .text_field textarea {
-  width: 100%;
+  width: 100px;
   height: 300px
 }
 
