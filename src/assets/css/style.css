@@ -1,6 +1,58 @@
-#text_field {
-  font-size: 12pt;
-  height: 200px;
-  resize: none;
-  width: 50%;
+/*
+ * text field
+ */
+
+.text_field.container {
+  display: block;
+  margin: 0;
+  transform: translateZ(0);
+  -webkit-text-size-adjust: none;
 }
+
+.text_field .backdrop {
+  position: absolute;
+  z-index: 1;
+  border: 2px solid #685972;
+  background-color: white;
+  overflow: auto;
+  pointer-events: none;
+  transition: transform 1s;
+}
+
+.text_field .highlights {
+  color: transparent;
+}
+
+.text_field textarea {
+  caret-color: red;
+  display: block;
+  position: absolute;
+  z-index: 2;
+  margin: 0;
+  padding: 0;
+  border: 2px solid #74637f;
+  border-radius: 0;
+ /* color: transparent; */
+  background-color: transparent;
+  overflow: auto;
+  resize: none;
+  transition: transform 1s;
+}
+
+.text_field.container > *, *::before, *::after {
+  box-sizing: border-box;
+}
+
+.text_field.container, .text_field .backdrop, .text_field textarea {
+  width: 460px;
+  height: 180px
+}
+
+.text_field.container textarea, .text_field .highlights {
+  font-family: 'Verdana', Georgia, Serif;
+  font-size: 12pt;
+  overflow: auto;
+  visibility: none;
+  white-space: pre-wrap;
+}
+
