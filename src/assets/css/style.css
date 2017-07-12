@@ -66,23 +66,36 @@
  * Highlight
  */
 
-._tint {
-  color: red;
-}
-
-._ivar {
-  color: #f4a460;
-}
-
-._tap, ._tam, ._tat, ._tad {
+._tint, ._tvar {
   color: #000;
 }
 
-._tlp, ._trp {
-  color: #000;
+._tap, ._tam, ._tat, ._tad, ._teq {
+  color: #8b4513;
+}
+
+._tlp, ._trp, _tin {
+  color: #8b4513;
+}
+
+._tin {
+  color: #8b4513;
+  font-weight: 500;
 }
 
 ._tcmt {
   color: #800000;
 }
 
+._tif, ._tthen, ._telse {
+  color: #9400d3;
+}
+
+._tlet, ._trec {
+  color: #0000cd;
+  font-weight: 500;
+}
+
+._ttru, ._tfls {
+  color: #6495ed;
+}

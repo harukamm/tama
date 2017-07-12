@@ -69,6 +69,9 @@ let is_num c = List.mem c num
 (* skip_num: string state_t -> string state_t *)
 let skip_num = skip_mem num
 
+(* is_upper: char -> bool *)
+let is_upper c = List.mem c uppers
+
 (* until_spaces: string state_t -> string state_t *)
 let until_spaces = skip_not_mem spaces
 
@@ -160,6 +163,7 @@ let one_token (pt, ss) =
             | '-' -> (pt1 + 1, MINUS (info))
             | '*' -> (pt1 + 1, TIMES (info))
             | '/' -> (pt1 + 1, DIVIDE (info))
+            | '=' -> (pt1 + 1, EQUAL (info))
             | ')' -> (pt1 + 1, RPAREN (info))
             | '(' ->
               if not myb_cmt then (pt1 + 1, LPAREN (info))
@@ -175,9 +179,25 @@ let one_token (pt, ss) =
     | _ when starts_with_num ->
       let info = (pt, pt1) in
       (pt1, INT (int_of_string word, info))
+    | _ when is_upper (String.get word 0) ->
+      let info = (pt, pt1) in
+      (raise (Tokenize_Error (word, info)))
     | _ ->
       let info = (pt, pt1) in
-      (pt1, VAR (word, info))
+      let tkn =
+        match word with
+        | "let" -> LET (info)
+        | "if" -> IF (info)
+        | "then" -> THEN (info)
+        | "else" -> ELSE (info)
+        | "equal" -> EQUAL (info)
+        | "rec" -> REC (info)
+        | "in" -> IN (info)
+        | "true" -> TRUE (info)
+        | "false" -> FALSE (info)
+        | _ -> VAR (word, info)
+      in
+      (pt1, tkn)
 
 (* token_loop: string state_t -> token_t list *)
 let rec token_loop (pt, ss) =

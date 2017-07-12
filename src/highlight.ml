@@ -3,7 +3,7 @@ open Types
 (* class_of_token: token_t -> string *)
 let class_of_token tkn = match tkn with
   | INT (n, _) -> "_tint"
-  | VAR _ -> "_ivar"
+  | VAR _ -> "_tvar"
   | PLUS _ -> "_tap"
   | MINUS _ -> "_tam"
   | TIMES _ -> "_tat"
@@ -11,6 +11,15 @@ let class_of_token tkn = match tkn with
   | LPAREN _ -> "_tlp"
   | RPAREN _ -> "_trp"
   | COMMENT _ -> "_tcmt"
+  | LET _ -> "_tlet"
+  | IF _ -> "_tif"
+  | THEN _ -> "_tthen"
+  | ELSE _ -> "_telse"
+  | EQUAL _ -> "_teq"
+  | REC _ -> "_trec"
+  | IN _ -> "_tin"
+  | TRUE _ -> "_ttru"
+  | FALSE _ -> "_tfls"
 
 (* sub: string -> int -> int -> string *)
 let sub s in1 in2 =

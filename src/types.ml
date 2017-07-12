@@ -25,6 +25,15 @@ type token_t =
   | LPAREN of loc_info
   | RPAREN of loc_info
   | COMMENT of string * loc_info
+  | LET of loc_info
+  | IF of loc_info
+  | THEN of loc_info
+  | ELSE of loc_info
+  | EQUAL of loc_info
+  | REC of loc_info
+  | IN of loc_info
+  | TRUE of loc_info
+  | FALSE of loc_info
 
 type app_states_t = {
   is_executing: bool;
@@ -41,6 +50,15 @@ type sym_t =
   | SLPAREN
   | SRPAREN
   | SCOMMENT
+  | SLET
+  | SIF
+  | STHEN
+  | SELSE
+  | SEQUAL
+  | SREC
+  | SIN
+  | STRUE
+  | SFALSE
 
 let sym_of_token t = match t with
   | INT _ -> SINT
@@ -52,6 +70,15 @@ let sym_of_token t = match t with
   | LPAREN _ -> SLPAREN
   | RPAREN _ -> SRPAREN
   | COMMENT _ -> SCOMMENT
+  | LET _ -> SLET
+  | IF _ -> SIF
+  | THEN _ -> STHEN
+  | ELSE _ -> SELSE
+  | EQUAL _ -> SEQUAL
+  | REC _ -> SREC
+  | IN _ -> SIN
+  | TRUE _ -> STRUE
+  | FALSE _ -> SFALSE
 
 let tkn_eq sym t =
   let sym' = sym_of_token t in
@@ -81,6 +108,15 @@ let get_tkn_info t = match t with
   | LPAREN (l) -> l
   | RPAREN (l) -> l
   | COMMENT (_, l) -> l
+  | LET (l) -> l
+  | IF (l) -> l
+  | THEN (l) -> l
+  | ELSE (l) -> l
+  | EQUAL (l) -> l
+  | REC (l) -> l
+  | IN (l) -> l
+  | TRUE (l) -> l
+  | FALSE (l) -> l
 
 let get_ast_info t = match t with
   | Int (_, l) -> l
@@ -135,6 +171,24 @@ let sot t = match t with
     "RPAREN (" ^ (soli l) ^ ")"
   | COMMENT (s, l) ->
     "COMMENT (" ^ s ^ "," ^ (soli l) ^ ")"
+  | LET (l) ->
+    "LET (" ^ (soli l) ^ ")"
+  | IF (l) ->
+    "IF (" ^ (soli l) ^ ")"
+  | THEN (l) ->
+    "THEN (" ^ (soli l) ^ ")"
+  | ELSE (l) ->
+    "ELSE (" ^ (soli l) ^ ")"
+  | EQUAL (l) ->
+    "EQUAL (" ^ (soli l) ^ ")"
+  | REC (l) ->
+    "REC (" ^ (soli l) ^ ")"
+  | IN (l) ->
+    "IN (" ^ (soli l) ^ ")"
+  | TRUE (l) ->
+    "TRUE (" ^ (soli l) ^ ")"
+  | FALSE (l) ->
+    "FALSE (" ^ (soli l) ^ ")"
 
 let string_of_linfo = soli
 
