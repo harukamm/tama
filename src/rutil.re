@@ -176,6 +176,5 @@ let replace_br text => {
   let lite = stringRiteral_ text;
   let e = lite ^ ".replace(/\\n/g, '<br>')";
   let e' = eval_to_string e;
-  Js.log e';
   e'
 }

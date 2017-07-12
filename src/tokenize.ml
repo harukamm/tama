@@ -100,7 +100,7 @@ let skip_comment (pt, s) =
       let nt = look_ahead 2 pt_1 s in
       let bk = look_back 2 pt_1 s in
       if len <= pt_1 then
-        raise (Comment_Not_Terminated (pt, pt_1))
+        (raise (Comment_Not_Terminated (pt, pt_1)))
       else if bk = "*)" && nested = 1 then
         (pt_1 + 1, text ^ ")")
       else if nt = "(*" || bk = "*)" then

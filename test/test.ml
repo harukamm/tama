@@ -2,6 +2,7 @@
 #load "types.cmo";;
 #load "tokenize.cmo";;
 (* #load "parse.cmo";; *)
+#load "highlight.cmo";;
 
 open Types;;
 
@@ -57,11 +58,19 @@ let s2 = "    \n\
 \t    50000 \n"
 let e4 = Tokenize.one_token (0, s2)
 let i4 = (15, 20)
+let e =
+  try
+    let _ = Tokenize.one_token (0, "(*") in
+    false
+  with Types.Comment_Not_Terminated (info) -> (0, 2) = info
+
+let () = assert e
 
 let () = assert ((8, VAR ("aBCxxx", i1)) = e1)
 let () = assert ((3, PLUS (i2)) = e2)
 let () = assert ((6, VAR ("xx", i3)) = e3)
 let () = assert ((20, INT (50000, i4)) = e4)
+let () = assert e
 
 let s = "5 +  10\n\
 \t-1\n"

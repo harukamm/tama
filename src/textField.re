@@ -60,15 +60,9 @@ let setTextarea (theRef : Js.null Dom.element) self => {
 };
 
 let applyHightlights text => {
-  let len = String.length text;
-  let half = Rutil.replace_br text;
-/*
-  let hlen = len / 2;
-  let half = String.sub text 0 hlen;
-  let half = Rutil.replace_br half;
-  let rest = String.sub text hlen (len - hlen); */
-
-  "<mark>" ^ half ^ "</mark>"
+  let text = Highlight.main text;
+  let x = Rutil.replace_br text;
+  x
 };
 
 let handleScroll (e : ReactEventRe.UI.t) self => {
@@ -80,7 +74,6 @@ let handleScroll (e : ReactEventRe.UI.t) self => {
       Rutil.setScrollLeft e2 top;
       let left = Rutil.getScrollLeft e1;
       Rutil.setScrollLeft e2 left;
-      Js.log "done";
     }
   | _ => ()
   };
@@ -128,7 +121,7 @@ let make _children => {
     let state = self.ReasonReact.state;
     switch state.textarea_ {
     | None => ()
-    | Some e => Js.log "ok"; addPasteListener (e)
+    | Some e => addPasteListener (e)
     };
     ReasonReact.NoUpdate
   },

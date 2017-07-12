@@ -1,3 +1,4 @@
+(*
 open Types
 
 exception Out_of_Index
@@ -234,3 +235,4 @@ and factor () =
 
 (* main : token_t list -> ast_t *)
 let main ts = ts
+*)

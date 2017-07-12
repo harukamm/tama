@@ -62,3 +62,27 @@
   white-space: pre-wrap;
 }
 
+/*
+ * Highlight
+ */
+
+._tint {
+  color: red;
+}
+
+._ivar {
+  color: #f4a460;
+}
+
+._tap, ._tam, ._tat, ._tad {
+  color: #000;
+}
+
+._tlp, ._trp {
+  color: #000;
+}
+
+._tcmt {
+  color: #800000;
+}
+
