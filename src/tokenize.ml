@@ -77,16 +77,16 @@ let all_mem s cs = List.for_all (fun c -> List.mem c cs) (string_to_clst s)
 
 (* look_ahead: int -> int -> string *)
 let look_ahead n pt s =
-  let npt = pt + n in
+  let npt = pt + n - 1 in
   let len = String.length s in
-  if pt <= 0 || len <= npt then ""
+  if pt < 0 || len <= npt then ""
   else String.sub s pt n
 
 (* look_back: int -> int -> string *)
 let look_back n pt s =
   let bpt = pt - n + 1 in
   let len = String.length s in
-  if bpt <= 0 || len <= pt then ""
+  if bpt < 0 || len <= pt then ""
   else String.sub s bpt n
 
 (* skip_comment: string state_t -> string state_t *)
