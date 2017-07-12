@@ -67,13 +67,15 @@ let applyHightlights text => {
 
 let handleScroll (e : ReactEventRe.UI.t) self => {
   let textarea = getRefer 3 self;
-  let backdrop = getRefer 1 self;
-  switch (textarea, backdrop) {
+  let highl = getRefer 2 self;
+  switch (textarea, highl) {
   | (Some e1, Some e2) => {
       let top = Rutil.getScrollTop e1;
-      Rutil.setScrollLeft e2 top;
-      let left = Rutil.getScrollLeft e1;
-      Rutil.setScrollLeft e2 left;
+      /* Rutil.setScrollTop e2 top; */
+      let tops = "margin-top:" ^ (Util.soi (-top)) ^ "px";
+      Rutil.set_styles e2 tops;
+     /* let left = Rutil.getScrollLeft e1;
+      Rutil.setScrollLeft e2 left; */
     }
   | _ => ()
   };
@@ -118,10 +120,12 @@ let make _children => {
   },
 
   didMount: fun self => {
-    let state = self.ReasonReact.state;
-    switch state.textarea_ {
-    | None => ()
-    | Some e => addPasteListener (e)
+    let opt_highlights = getRefer 2 self;
+    switch opt_highlights {
+    | Some e =>
+      let text = applyHightlights self.state.content;
+      Rutil.setInnerHTML e text
+    | _ => ()
     };
     ReasonReact.NoUpdate
   },
@@ -132,7 +136,9 @@ let make _children => {
         <div className="highlights" ref=(self.update (setRefer 2))>
         </div>
       </div>
-      <textarea ref=(self.update (setRefer 3)) onScroll=(self.update handleScroll) onInput=(self.update handleInput)/>
+      <textarea ref=(self.update (setRefer 3)) onScroll=(self.update handleScroll) onInput=(self.update handleInput)>
+        (Rutil.s2e self.state.content)
+      </textarea>
     </div>
   }
 };

@@ -1,10 +1,10 @@
 /*
  * text field
  */
-
 .text_field.container {
   display: block;
   margin: 0;
+  margin-top: 100px;
   transform: translateZ(0);
   -webkit-text-size-adjust: none;
 }
@@ -13,8 +13,8 @@
   position: absolute;
   z-index: 2;
   padding: 1px;
- /* border: 2px solid #685972; */
-  overflow: auto;
+  overflow: scroll;
+  overflow-y: scroll;
   pointer-events: none;
   transition: transform 1s;
   -webkit-transition: transform 1s;
@@ -22,6 +22,7 @@
 
 .text_field .highlights {
   color: transparent;
+  display: block;
   word-wrap: break-word;
 }
 
@@ -50,8 +51,8 @@
 }
 
 .text_field.container, .text_field .backdrop, .text_field textarea {
-  width: 100px;
-  height: 300px
+  width: 400px;
+  height: 200px;
 }
 
 .text_field.container textarea, .text_field .highlights {
