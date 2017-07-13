@@ -1,7 +1,7 @@
 #load "util.cmo";;
 #load "types.cmo";;
 #load "tokenize.cmo";;
-(* #load "parse.cmo";; *)
+#load "parse.cmo";;
 #load "highlight.cmo";;
 
 open Types;;
@@ -120,7 +120,6 @@ let e =
     info = (1, 15)
 let () = assert e
 
-(*
 (* Parse test *)
 let init_ptr () = Parse.set 0
 let init_tkn ts = Parse.set_tkn (Array.of_list ts)
@@ -161,7 +160,7 @@ let s = "   - \n\
 let ts = Tokenize.main s
 let () = init_status ts
 let e = Parse.negative_num ()
-let info = ((0, 3), (1, 6))
+let info = (3, 12)
 let () = assert (Int (-50, info)  = e)
 let () = init_ptr ()
 let e = Parse.int_ ()
@@ -174,21 +173,21 @@ let s = " 5 - 1 - 2"
 let ts = Tokenize.main s
 let () = init_status ts
 let e = Parse.expr ()
-let x1 = Int (5, ((0, 1), (0, 2)))
-let x2 = Int (1, ((0, 5), (0, 6)))
-let x3 = Int (2, ((0, 9), (0, 10)))
-let x = Minus (Minus (x1, x2, ((0, 1), (0, 6))), x3, ((0, 1), (0, 10)))
+let x1 = Int (5, (1, 2))
+let x2 = Int (1, (5, 6))
+let x3 = Int (2, (9, 10))
+let x = Minus (Minus (x1, x2, (1, 6)), x3, (1, 10))
 let () = assert (x = e)
 
 let s = " 5 + 4 * - 1 "
 let ts = Tokenize.main s
 let () = init_status ts
 let e = Parse.expr ()
-let x1 = Int (4, ((0, 5), (0, 6)))
-let x2 = Int (-1, ((0, 9), (0, 12)))
-let x3 = Times (x1, x2, ((0, 5), (0, 12)))
-let x4 = Int (5, ((0, 1), (0, 2)))
-let x5 = Plus (x4, x3, ((0, 1), (0, 12)))
+let x1 = Int (4, (5, 6))
+let x2 = Int (-1, (9, 12))
+let x3 = Times (x1, x2, (5, 12))
+let x4 = Int (5, (1, 2))
+let x5 = Plus (x4, x3, (1, 12))
 let () = assert (x5 = e)
 
 let s = " 10 / 2 * 3 \n\
@@ -196,27 +195,26 @@ let s = " 10 / 2 * 3 \n\
 let ts = Tokenize.main s
 let () = init_status ts
 let e = Parse.expr ()
-let x1 = Int (10, ((0, 1), (0, 3)))
-let x2 = Int (2, ((0, 6), (0, 7)))
-let x3 = Int (3, ((0, 10), (0, 11)))
-let x4 = Int (5, ((1, 2), (1, 3)))
-let x5 = Divide (x1, x2, ((0, 1), (0, 7)))
-let x6 = Times (x5, x3, ((0, 1), (0, 11)))
-let x7 = Plus (x6, x4, ((0, 1), (1, 3)))
+let x1 = Int (10, (1, 3))
+let x2 = Int (2, (6, 7))
+let x3 = Int (3, (10, 11))
+let x4 = Int (5, (15, 16))
+let x5 = Divide (x1, x2, (1, 7))
+let x6 = Times (x5, x3, (1, 11))
+let x7 = Plus (x6, x4, (1, 16))
 let () = assert (x7 = e)
 
 let s = " 10 / 5 / (1 - (2))"
 let ts = Tokenize.main s
 let () = init_status ts
 let e = Parse.expr ()
-let x1 = Int (10, ((0, 1), (0, 3)))
-let x2 = Int (5, ((0, 6), (0, 7)))
-let x3 = Int (1, ((0, 11), (0, 12)))
-let x4 = Int (2, ((0, 15), (0, 18)))
-let x5 = Divide (x1, x2, ((0, 1), (0, 7)))
-let x6 = Minus (x3, x4, ((0, 11), (0, 18)))
-let x7 = Divide (x5, x6, ((0, 1), (0, 19)))
-*)
+let x1 = Int (10, (1, 3))
+let x2 = Int (5, (6, 7))
+let x3 = Int (1, (11, 12))
+let x4 = Int (2, (15, 18))
+let x5 = Divide (x1, x2, (1, 7))
+let x6 = Minus (x3, x4, (11, 18))
+let x7 = Divide (x5, x6, (1, 19))
 
 let () = print_endline "<<<<<<<<<<<<<<"
 let () = print_endline "Success"

@@ -1,4 +1,3 @@
-(*
 open Types
 
 exception Out_of_Index
@@ -120,49 +119,29 @@ let and_ fs =
      with e -> set ind; raise e
 
 let valid_info info =
-  let rec h pl pce lst = match lst with
+  let rec h pre lst = match lst with
     | [] ->
       true
-    | (l, (c1, c2)) :: rest ->
-      ((pl = l && pce <= c1) || pl < l) && (h l c2 rest)
+    | (p1, p2) :: rest ->
+      (pre <= p1) && (p1 < p2) && (h p2 rest)
   in
-  info != [] && (h (-1) (-1) info)
+  info != [] && (h (-1) info)
 
-let valid_ast_info info =
-  let rec h pl pce lst = match lst with
-    | [] ->
-      true
-    | ((ls, cs), (le, ce)) :: rest ->
-      (((pl = ls) && pce < cs) || pl < ls) && (h le ce rest)
-  in
-  info != [] && (h (-1) (-1) info)
-
-let merge_tkn_info info : loc_info2 =
+let merge_info info =
   let is_valid = valid_info info in
   let _ = if not is_valid then failwith "Cannot merge invalid location-info" in
   let len = List.length info in
-  let (l1, (cs1, _)) = List.hd info in
-  let (l2, (_, ce2)) = List.nth info (len - 1) in
-  ((l1, cs1), (l2, ce2))
-
-let merge_ast_info info : loc_info2 =
-  let is_valid = valid_ast_info info in
-  let _ = if not is_valid then failwith "Cannot merge invalid location-info2" in
-  let len = List.length info in
-  let ((ls1, cs1), (_, _)) = List.hd info in
-  let ((_, _), (le2, ce2)) = List.nth info (len - 1) in
-  ((ls1, cs1), (le2, ce2))
-
-let conv_info info : loc_info2 = match info with
-  (l, (cs, ce)) -> ((l, cs), (l, ce))
+  let (p1, _) = List.hd info in
+  let (_, p2) = List.nth info (len - 1) in
+  (p1, p2)
 
 let get_and_merge_tkn_info ts =
   let info_lst = List.map get_tkn_info ts in
-  merge_tkn_info info_lst
+  merge_info info_lst
 
 let get_and_merge_ast_info ts =
   let info_lst = List.map get_ast_info ts in
-  merge_ast_info info_lst
+  merge_info info_lst
 
 (*
  * e := e PLUS t
@@ -183,15 +162,15 @@ let get_and_merge_ast_info ts =
 
 exception SNH (* should not happen *)
 let num () = match expect_tkn SINT with
-  | INT (n, l) -> Int (n, conv_info l)
+  | INT (n, l) -> Int (n, l)
   | _ -> raise SNH
 
 let negative_num () = match expect_tkns [SMINUS; SINT] with
-  | [MINUS (l1); INT (n, l2)] -> Int (-n, merge_tkn_info [l1; l2])
+  | [MINUS (l1); INT (n, l2)] -> Int (-n, merge_info [l1; l2])
   | _ -> raise SNH
 
 let var () = match expect_tkn SVAR with
-  | VAR (s, l) -> Var (s, conv_info l)
+  | VAR (s, l) -> Var (s, l)
   | _ -> raise SNH
 
 let int_ () = or_ "int_" [num; negative_num]
@@ -235,4 +214,3 @@ and factor () =
 
 (* main : token_t list -> ast_t *)
 let main ts = ts
-*)
