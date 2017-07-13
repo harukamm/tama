@@ -144,6 +144,9 @@ let get_and_merge_ast_info ts =
   merge_info info_lst
 
 (*
+ * s := IF s THEN s ELSE s
+ *    | e
+ *
  * e := e PLUS t
  *    | e MINUS t
  *    | t
@@ -152,12 +155,14 @@ let get_and_merge_ast_info ts =
  *    | t DIVIDE f
  *    | f
  *
- * f := LPAREN e RPAREN
+ * f := LPAREN s RPAREN
  *    | v
  *
  * v := INT
  *    | MINUS INT
  *    | VAR
+ *    | TRUE
+ *    | FALSE
  *)
 
 exception SNH (* should not happen *)
@@ -173,10 +178,29 @@ let var () = match expect_tkn SVAR with
   | VAR (s, l) -> Var (s, l)
   | _ -> raise SNH
 
-let int_ () = or_ "int_" [num; negative_num]
-let value () = or_ "value" [int_; var]
+let bool_ () = match expect_tkn_or [STRUE; SFALSE] with
+  | TRUE (l) -> True (l)
+  | FALSE (l) -> False (l)
+  | _ -> raise SNH
 
-let rec expr () =
+let int_ () = or_ "int_" [num; negative_num]
+let value () = or_ "value" [int_; var; bool_]
+
+let rec ifs () =
+  let f_1 () =
+    let tif = expect_tkn SIF in
+    let e1 = ifs () in
+    let _ = expect_tkn STHEN in
+    let e2 = ifs () in
+    let _ = expect_tkn SELSE in
+    let e3 = ifs () in
+    let i1 = get_tkn_info tif in
+    let i2 = get_ast_info e3 in
+    If (e1, e2, e3, merge_info [i1; i2])
+  in
+  or_ "ifs" [f_1; expr]
+
+and expr () =
   let t1 = term () in
   let f_1 () =
     let ts = many1 (fun () ->
@@ -205,7 +229,7 @@ and term () =
 and factor () =
   let f_1 () =
     let lprn = expect_tkn SLPAREN in
-    let e = expr () in
+    let e = ifs () in
     let rprn = expect_tkn SRPAREN in
     let info' = get_and_merge_tkn_info [lprn; rprn] in
     set_ast_info e info'

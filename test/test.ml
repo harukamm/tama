@@ -216,6 +216,32 @@ let x5 = Divide (x1, x2, (1, 7))
 let x6 = Minus (x3, x4, (11, 18))
 let x7 = Divide (x5, x6, (1, 19))
 
+let s = " if true then 1 else -5"
+let ts = Tokenize.main s
+let () = init_status ts
+let e = Parse.ifs ()
+let x1 = True (4, 8)
+let x2 = Int (1, (14, 15))
+let x3 = Int (-5, (21, 23))
+let x4 = If (x1, x2, x3, (1, 23))
+let () = assert (x4 = e)
+
+let s = " if true then 1 + 10 * 9 else 10 + 1"
+let ts = Tokenize.main s
+let () = init_status ts
+let e = Parse.ifs ()
+let x1 = True (4, 8)
+let x2 = Int (1, (14, 15))
+let x3 = Int (10, (18, 20))
+let x4 = Int (9, (23, 24))
+let x5 = Times (x3, x4, (18, 24))
+let x6 = Plus (x2, x5, (14, 24))
+let x7 = Int (10, (30, 32))
+let x8 = Int (1, (35, 36))
+let x9 = Plus (x7, x8, (30, 36))
+let x10 = If (x1, x6, x9, (1, 36))
+let () = assert (x10 = e)
+
 let () = print_endline "<<<<<<<<<<<<<<"
 let () = print_endline "Success"
 let () = print_endline "<<<<<<<<<<<<<<"

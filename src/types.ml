@@ -10,6 +10,9 @@ type ast_t =
   | Times of ast_t * ast_t * loc_info
   | Divide of ast_t * ast_t * loc_info
   | Comment of string * loc_info
+  | If of ast_t * ast_t * ast_t * loc_info
+  | True of loc_info
+  | False of loc_info
 
 exception Tokenize_Error of (string * loc_info)
 
