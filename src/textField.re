@@ -12,7 +12,8 @@ type state = {
   linesDiv_: option Dom.element,
   codeLinesDiv_: option Dom.element,
   content: string,
-  text_height: int
+  text_height: int,
+  max_text_height: int
 };
 
 let queries =
@@ -23,69 +24,86 @@ let queries =
           ...[(4, ".lines"),
             ...[(5, ".codelines")]]]]]];
 
-let setRefer ind theRef {ReasonReact.state} => {
-  let opt_ref = Js.Null.to_opt theRef;
-  let state' =
-    switch (ind, opt_ref) {
-    | (0, Some _) => {...state, container_: opt_ref}
-    | (1, Some _) => {...state, backdrop_: opt_ref}
-    | (2, Some _) => {...state, highlights_: opt_ref}
-    | (3, Some _) => {...state, textarea_: opt_ref}
-    | (4, Some _) => {...state, linesDiv_: opt_ref}
-    | (5, Some _) => {...state, codeLinesDiv_: opt_ref}
-    | _ => state
-    };
-  ReasonReact.SilentUpdate state'
+let setReferToState ind opt_ref state => {
+  switch (ind, opt_ref) {
+  | (0, Some _) => {...state, container_: opt_ref}
+  | (1, Some _) => {...state, backdrop_: opt_ref}
+  | (2, Some _) => {...state, highlights_: opt_ref}
+  | (3, Some _) => {...state, textarea_: opt_ref}
+  | (4, Some _) => {...state, linesDiv_: opt_ref}
+  | (5, Some _) => {...state, codeLinesDiv_: opt_ref}
+  | _ => state
+  };
 };
 
-let getRefer ind {ReasonReact.state} => {
-  let get_opt_ref index =>
-    switch index {
-    | 0 => state.container_
-    | 1 => state.backdrop_
-    | 2 => state.highlights_
-    | 3 => state.textarea_
-    | 4 => state.linesDiv_
-    | 5 => state.codeLinesDiv_
-    | _ => None
-    };
-  let opt_ref = get_opt_ref ind;
-  switch opt_ref {
-  | None =>
-    if (List.length queries <= ind) {
-      None
-    } else {
-      let query = List.assoc ind queries;
-      let e = Rutil.querySelector query;
-      Rutil.isNullElement e ? None : Some e
-    }
-  | Some e => Some e
+let setRefer ind theRef {ReasonReact.state: state} => {
+  let opt_ref = Js.Null.to_opt theRef;
+  let state' = setReferToState ind opt_ref state;
+  ReasonReact.SilentUpdate state';
+};
+
+let getReferFromState ind state =>
+  switch ind {
+  | 0 => state.container_
+  | 1 => state.backdrop_
+  | 2 => state.highlights_
+  | 3 => state.textarea_
+  | 4 => state.linesDiv_
+  | 5 => state.codeLinesDiv_
+  | _ => None
+  };
+
+let getReferFromDoc ind => {
+  if (List.length queries <= ind) {
+    None
+  } else {
+    let query = List.assoc ind queries;
+    let e = Rutil.querySelector query;
+    Rutil.isNullElement e ? None : Some e
   }
 };
 
-let setTextarea (theRef : Js.null Dom.element) self => {
-  let opt_ref : option Dom.element = Js.Null.to_opt theRef;
-  setRefer 3 theRef self
-};
+let getReferAndNewState id state =>
+  switch (getReferFromState id state) {
+  | None =>
+    let opt = getReferFromDoc id;
+    (opt, setReferToState id opt state)
+  | Some e =>
+    (Some e, state)
+  };
 
-let create_lineno_div ht => {
+let create_lineno_div st en => {
   let div n => "<div class='lineno'>" ^ (string_of_int n) ^ "</div>";
   let rec h n acc =>
-    ht < n ? acc : (h (n + 1) (acc ^ (div n)));
-  h 1 ""
+    en < n ? acc : (h (n + 1) (acc ^ (div n)));
+  h st ""
 };
 
-let setLineNumber height self => {
-  let opt_codelines = getRefer 5 self;
-  switch opt_codelines {
-  | None =>
-    ()
-  | Some e => {
-      let txt = create_lineno_div height;
-      Rutil.setInnerHTML e txt;
-    }
-  };
-  ReasonReact.NoUpdate
+let setLineNumber height state => {
+  let max = state.max_text_height;
+  if (height == max) {
+    ReasonReact.NoUpdate
+  } else if (height < max) {
+    let state = {...state, text_height: height, max_text_height: height};
+    let (opt_codelines, state) = getReferAndNewState 5 state;
+    switch opt_codelines {
+    | None => ()
+    | Some e => Rutil.remove_last_children (max - height) e
+    };
+    ReasonReact.Update state
+  } else {
+    let state = {...state, text_height: height, max_text_height: height};
+    let (opt_codelines, state) = getReferAndNewState 5 state;
+    switch opt_codelines {
+    | None =>
+      ()
+    | Some e => {
+      let txt = create_lineno_div (max + 1) height;
+      Rutil.appendHTML e txt
+      }
+    };
+    ReasonReact.Update state;
+  }
 };
 
 let applyHightlights text => {
@@ -95,9 +113,10 @@ let applyHightlights text => {
 };
 
 let handleScroll (e : ReactEventRe.UI.t) self => {
-  let textarea = getRefer 3 self;
-  let highl = getRefer 2 self;
-  let codelines = getRefer 5 self;
+  let state = self.ReasonReact.state;
+  let (textarea, state) = getReferAndNewState 3 state;
+  let (highl, state) = getReferAndNewState 2 state;
+  let (codelines, state) = getReferAndNewState 5 state;
   switch (textarea, highl, codelines) {
   | (Some e1, Some e2, Some e3) => {
       let top = Rutil.getScrollTop e1;
@@ -109,12 +128,12 @@ let handleScroll (e : ReactEventRe.UI.t) self => {
     }
   | _ => ()
   };
-  ReasonReact.NoUpdate 
+  ReasonReact.Update state;
 };
 
-let handleInput (e : ReactEventRe.Form.t) self => {
+let handleInput (e : ReactEventRe.Form.t) {ReasonReact.state: state} => {
   let value = Rutil.value_of_event e;
-  let opt_highlights = getRefer 2 self;
+  let (opt_highlights, state) = getReferAndNewState 2 state;
   switch opt_highlights {
   | None =>
     ()
@@ -124,9 +143,7 @@ let handleInput (e : ReactEventRe.Form.t) self => {
     }
   };
   let cnt = Rutil.count_br value;
-  Js.log cnt;
-  setLineNumber cnt self;
-  ReasonReact.Update {...self.state, content: value, text_height: cnt}
+  setLineNumber cnt state;
 };
 
 let addPasteListener elm => {
@@ -152,18 +169,27 @@ let make _children => {
     linesDiv_: None,
     codeLinesDiv_: None,
     content: "",
-    text_height: 1
+    text_height: 1,
+    max_text_height: 0
   },
 
-  didMount: fun self => {
-    let opt_highlights = getRefer 2 self;
+  didMount: fun {ReasonReact.state: state} => {
+    let (opt_highlights, state) = getReferAndNewState 2 state;
     switch opt_highlights {
     | Some e =>
-      let text = applyHightlights self.state.content;
+      let text = applyHightlights state.content;
       Rutil.setInnerHTML e text
     | _ => ()
     };
-    ReasonReact.NoUpdate
+    let (opt_lines, state) = getReferAndNewState 4 state;
+    switch opt_lines {
+    | Some e =>
+      let height = Rutil.get_style_height e;
+      Js.log height;
+    | _ => ()
+    };
+    /* setLineNumber cnt self; */
+    ReasonReact.Update state;
   },
 
   render: fun self => {

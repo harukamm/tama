@@ -109,8 +109,17 @@ external setScrollLeft : Dom.element => int => unit =
 external setInnerHTML : Dom.element => string => unit =
   "innerHTML" [@@bs.set];
 
+external getInnerHTML : Dom.element => string =
+  "innerHTML" [@@bs.get];
+
+let appendHTML e html =>
+  setInnerHTML e ((getInnerHTML e) ^ html);
+
 external textContent : Dom.element => string =
   "" [@@bs.get];
+
+external lastChild_ : Dom.element => Dom.element =
+  "lastChild" [@@bs.get];
 
 type childs;
 
@@ -159,10 +168,25 @@ let set_styles e styles =>
 external elmToString : Dom.element => string =
   "call" [@@bs.val] [@@bs.scope ("Object", "prototype", "toString")];
 
+external removeChild : Dom.element => Dom.element => unit =
+  "" [@@bs.send];
+
 let isNullElement e => {
   let str = elmToString e;
   str == "[object Null]"
 };
+
+let remove_last_child e => {
+  let last = lastChild_ e;
+  if (isNullElement last) {
+    ()
+  } else {
+    removeChild e last;
+  }
+};
+
+let rec remove_last_children cnt e =>
+  cnt <= 0 ? () : { remove_last_child e; remove_last_children (cnt - 1) e };
 
 /* other javaScript APIs */
 
