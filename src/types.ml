@@ -9,7 +9,6 @@ type ast_t =
   | Minus of ast_t * ast_t * loc_info
   | Times of ast_t * ast_t * loc_info
   | Divide of ast_t * ast_t * loc_info
-  | Comment of string * loc_info
   | If of ast_t * ast_t * ast_t * loc_info
   | True of loc_info
   | False of loc_info
@@ -128,7 +127,6 @@ let get_ast_info t = match t with
   | Minus (_, _, l) -> l
   | Times (_, _, l) -> l
   | Divide (_, _, l) -> l
-  | Comment (_, l) -> l
 
 let set_ast_info t l = match t with
   | Int (t, _) -> Int (t, l)
@@ -137,7 +135,6 @@ let set_ast_info t l = match t with
   | Minus (t1, t2, _) -> Minus (t1, t2, l)
   | Times (t1, t2, _) -> Times (t1, t2, l)
   | Divide (t1, t2, _) -> Divide (t1, t2, l)
-  | Comment (s, _) -> Comment (s, l)
 
 let rec soa t = match t with
   | Int (i, l) ->
@@ -152,8 +149,6 @@ let rec soa t = match t with
     "Times (" ^ (soa e1) ^ ", " ^ (soa e2) ^ ", " ^ (soli l) ^ ")"
   | Divide (e1, e2, l) ->
     "Divide (" ^ (soa e1) ^ ", " ^ (soa e2) ^ ", " ^ (soli l) ^ ")"
-  | Comment (s, l) ->
-    "Comemnt (" ^ s ^ ", " ^ (soli l) ^ ")"
 
 let sot t = match t with
   | INT (i, l) ->
