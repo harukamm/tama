@@ -131,14 +131,26 @@ let make _children => {
   },
 
   render: fun self => {
-    <div className="container text_field" ref=(self.update (setRefer 0))>
-      <div className="backdrop" ref=(self.update (setRefer 1))>
-        <div className="highlights" ref=(self.update (setRefer 2))>
+    <div>
+      <div className="lines">
+        <div className="codelines">
+          (Rutil.s2e "hoge") <br />
+          (Rutil.s2e "hoge") <br />
+          (Rutil.s2e "hoge") <br />
+          (Rutil.s2e "hoge") <br />
+          (Rutil.s2e "hoge") <br />
+          (Rutil.s2e "hoge")
         </div>
       </div>
-      <textarea ref=(self.update (setRefer 3)) onScroll=(self.update handleScroll) onInput=(self.update handleInput)>
-        (Rutil.s2e self.state.content)
-      </textarea>
+      <div className="container text_field" ref=(self.update (setRefer 0))>
+        <div className="backdrop" ref=(self.update (setRefer 1))>
+          <div className="highlights" ref=(self.update (setRefer 2))>
+          </div>
+        </div>
+        <textarea ref=(self.update (setRefer 3)) onScroll=(self.update handleScroll) onInput=(self.update handleInput)>
+          (Rutil.s2e self.state.content)
+        </textarea>
+      </div>
     </div>
   }
 };

@@ -1,10 +1,12 @@
 /*
  * text field
  */
+
 .text_field.container {
   display: block;
+  float: left;
+  width: 450px;
   margin: 0;
-  margin-top: 100px;
   transform: translateZ(0);
   -webkit-text-size-adjust: none;
 }
@@ -46,13 +48,24 @@
   -webkit-transition: transform 1s;
 }
 
+.lines {
+  font-family: 'Verdana', Georgia, Serif;
+  float: left;
+  font-size: 12pt;
+  width: 50px;
+  height: 200px;
+}
+
 .text_field.container > *, *::before, *::after {
   box-sizing: border-box;
 }
 
 .text_field.container, .text_field .backdrop, .text_field textarea {
-  width: 400px;
   height: 200px;
+}
+
+.text_field .backdrop, .text_field textarea {
+  width: 400px;
 }
 
 .text_field.container textarea, .text_field .highlights {
