@@ -9,14 +9,19 @@ type state = {
   backdrop_: option Dom.element,
   highlights_: option Dom.element,
   textarea_: option Dom.element,
-  content: string
+  linesDiv_: option Dom.element,
+  codeLinesDiv_: option Dom.element,
+  content: string,
+  text_height: int
 };
 
 let queries =
   [(0, ".text_field.container"),
     ...[(1, ".text_field .backdrop"),
       ...[(2, ".text_field .highlights"),
-        ...[(3, ".text_field textarea")]]]];
+        ...[(3, ".text_field textarea"),
+          ...[(4, ".lines"),
+            ...[(5, ".codelines")]]]]]];
 
 let setRefer ind theRef {ReasonReact.state} => {
   let opt_ref = Js.Null.to_opt theRef;
@@ -26,6 +31,8 @@ let setRefer ind theRef {ReasonReact.state} => {
     | (1, Some _) => {...state, backdrop_: opt_ref}
     | (2, Some _) => {...state, highlights_: opt_ref}
     | (3, Some _) => {...state, textarea_: opt_ref}
+    | (4, Some _) => {...state, linesDiv_: opt_ref}
+    | (5, Some _) => {...state, codeLinesDiv_: opt_ref}
     | _ => state
     };
   ReasonReact.SilentUpdate state'
@@ -38,6 +45,8 @@ let getRefer ind {ReasonReact.state} => {
     | 1 => state.backdrop_
     | 2 => state.highlights_
     | 3 => state.textarea_
+    | 4 => state.linesDiv_
+    | 5 => state.codeLinesDiv_
     | _ => None
     };
   let opt_ref = get_opt_ref ind;
@@ -59,6 +68,26 @@ let setTextarea (theRef : Js.null Dom.element) self => {
   setRefer 3 theRef self
 };
 
+let create_lineno_div ht => {
+  let div n => "<div class='lineno'>" ^ (string_of_int n) ^ "</div>";
+  let rec h n acc =>
+    ht < n ? acc : (h (n + 1) (acc ^ (div n)));
+  h 1 ""
+};
+
+let setLineNumber height self => {
+  let opt_codelines = getRefer 5 self;
+  switch opt_codelines {
+  | None =>
+    ()
+  | Some e => {
+      let txt = create_lineno_div height;
+      Rutil.setInnerHTML e txt;
+    }
+  };
+  ReasonReact.NoUpdate
+};
+
 let applyHightlights text => {
   let text = Highlight.main text;
   let x = Rutil.replace_br text;
@@ -68,14 +97,15 @@ let applyHightlights text => {
 let handleScroll (e : ReactEventRe.UI.t) self => {
   let textarea = getRefer 3 self;
   let highl = getRefer 2 self;
-  switch (textarea, highl) {
-  | (Some e1, Some e2) => {
+  let codelines = getRefer 5 self;
+  switch (textarea, highl, codelines) {
+  | (Some e1, Some e2, Some e3) => {
       let top = Rutil.getScrollTop e1;
-      /* Rutil.setScrollTop e2 top; */
-      let tops = "margin-top:" ^ (Util.soi (-top)) ^ "px";
-      Rutil.set_styles e2 tops;
-     /* let left = Rutil.getScrollLeft e1;
-      Rutil.setScrollLeft e2 left; */
+      let tops = "margin-top:" ^ (Util.soi (-top)) ^ "px;";
+      let left = Rutil.getScrollLeft e1;
+      let lefts = "margin-left:" ^ (Util.soi (-left)) ^ "px;";
+      Rutil.set_styles e2 (tops ^ lefts);
+      Rutil.set_styles e3 tops;
     }
   | _ => ()
   };
@@ -93,7 +123,10 @@ let handleInput (e : ReactEventRe.Form.t) self => {
       Rutil.setInnerHTML e text
     }
   };
-  ReasonReact.NoUpdate
+  let cnt = Rutil.count_br value;
+  Js.log cnt;
+  setLineNumber cnt self;
+  ReasonReact.Update {...self.state, content: value, text_height: cnt}
 };
 
 let addPasteListener elm => {
@@ -116,7 +149,10 @@ let make _children => {
     backdrop_: None,
     highlights_: None,
     textarea_: None,
-    content: ""
+    linesDiv_: None,
+    codeLinesDiv_: None,
+    content: "",
+    text_height: 1
   },
 
   didMount: fun self => {
@@ -132,14 +168,8 @@ let make _children => {
 
   render: fun self => {
     <div>
-      <div className="lines">
-        <div className="codelines">
-          (Rutil.s2e "hoge") <br />
-          (Rutil.s2e "hoge") <br />
-          (Rutil.s2e "hoge") <br />
-          (Rutil.s2e "hoge") <br />
-          (Rutil.s2e "hoge") <br />
-          (Rutil.s2e "hoge")
+      <div className="lines" ref=(self.update (setRefer 4))>
+        <div className="codelines" ref=(self.update (setRefer 5))>
         </div>
       </div>
       <div className="container text_field" ref=(self.update (setRefer 0))>
@@ -147,7 +177,7 @@ let make _children => {
           <div className="highlights" ref=(self.update (setRefer 2))>
           </div>
         </div>
-        <textarea ref=(self.update (setRefer 3)) onScroll=(self.update handleScroll) onInput=(self.update handleInput)>
+        <textarea ref=(self.update (setRefer 3)) onScroll=(self.update handleScroll) onInput=(self.update handleInput) wrap="off">
           (Rutil.s2e self.state.content)
         </textarea>
       </div>

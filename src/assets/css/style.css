@@ -25,7 +25,7 @@
 .text_field .highlights {
   color: transparent;
   display: block;
-  word-wrap: break-word;
+/*  word-wrap: break-word; */
 }
 
 .text_field .highlights mark {
@@ -52,8 +52,15 @@
   font-family: 'Verdana', Georgia, Serif;
   float: left;
   font-size: 12pt;
-  width: 50px;
+  overflow: hidden;
+  padding-right: 5px;
+  text-align: right;
+  width: 45px;
   height: 200px;
+}
+
+.codelines, .lineno {
+  white-space: nowrap;
 }
 
 .text_field.container > *, *::before, *::after {
@@ -65,7 +72,7 @@
 }
 
 .text_field .backdrop, .text_field textarea {
-  width: 400px;
+  width: 300px;
 }
 
 .text_field.container textarea, .text_field .highlights {
@@ -73,7 +80,7 @@
   font-size: 12pt;
   font-weight: 100;
   overflow: auto;
-  white-space: pre-wrap;
+  white-space: pre;
 }
 
 /*

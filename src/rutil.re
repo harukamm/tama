@@ -169,12 +169,21 @@ let isNullElement e => {
 external stringRiteral_ : string => string =
   "stringify" [@@bs.val] [@@bs.scope "JSON"];
 
+external eval_to_int : string => int =
+  "eval" [@@bs.val];
+
 external eval_to_string : string => string =
   "eval" [@@bs.val];
 
+let count_br text => {
+  let lite = stringRiteral_ text;
+  let e = lite ^ ".split('\\n').length";
+  eval_to_int e;
+};
+
 let replace_br text => {
   let lite = stringRiteral_ text;
-  let e = lite ^ ".replace(/\\n/g, '\\n')";
+  let e = lite ^ ".replace(/\\n/g, '<br>')";
   let e' = eval_to_string e;
   e'
 }
