@@ -11,6 +11,7 @@ type ast_t =
   | Divide of ast_t * ast_t * loc_info
   | If of ast_t * ast_t * ast_t * loc_info
   | Let of string * string list * ast_t * ast_t * loc_info
+  | Declare of string * string list * ast_t * ast_t * loc_info
   | True of loc_info
   | False of loc_info
 

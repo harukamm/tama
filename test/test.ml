@@ -255,6 +255,12 @@ let x6 = Times (Var ("x", (46, 47)), Int (9, (49, 50)), (46, 50))
 let x7 = Let ("x", [], x5, x6, (0, 50))
 let () = assert (x7 = e)
 
+let s = "let x=1 x+1"
+let ts = Tokenize.main s
+let e = Parse.main ts
+let x = Declare ("x", [], Int (1, (6, 7)), Plus (Var ("x", (8, 9)), Int (1, (10, 11)), (8, 11)), (0, 11))
+let () = assert (x = e)
+
 let () = print_endline "<<<<<<<<<<<<<<"
 let () = print_endline "Success"
 let () = print_endline "<<<<<<<<<<<<<<"

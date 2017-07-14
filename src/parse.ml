@@ -8,6 +8,8 @@ exception Not_Found_Match of string
 
 let ptr = ref 0
 
+let depth = ref 0
+
 let tarr : token_t array ref = ref [||]
 
 let set_tkn arr = tarr := arr
@@ -29,6 +31,19 @@ let get () =
   get_with (index ())
 
 let set pt = ptr := pt
+
+let get_depth () = !depth
+
+let set_depth d = depth := d
+
+let incr_depth () = set_depth (!depth + 1)
+
+let is_depth d = get_depth () = d
+
+let init ts =
+  set 0;
+  set_depth 0;
+  set_tkn (Array.of_list ts)
 
 (* accept: (token_t -> bool) -> bool *)
 let accept p =
@@ -53,6 +68,9 @@ let forsee n =
   let max_dif = n - 1 in
   if is_safe max_dif then h 0
   else (raise (Not_Found_Match "forsee"))
+
+(* accept_tkn: sym_t -> bool *)
+let accept_tkn sym = accept (tkn_eq sym)
 
 (* expect_mult: int -> (token_t list -> bool) -> token_t list *)
 let expect_mult n p =
@@ -144,8 +162,10 @@ let get_and_merge_ast_info ts =
   merge_info info_lst
 
 (*
- * s := LET VAR+ EQUAL s [IN] s
- *    | IF s THEN s ELSE s
+ * l := LET VAR+ EQUAL l [IN] l
+ *    | s
+ *
+ * s := IF s THEN s ELSE s
  *    | e
  *
  * e := e PLUS t
@@ -156,7 +176,7 @@ let get_and_merge_ast_info ts =
  *    | t DIVIDE f
  *    | f
  *
- * f := LPAREN s RPAREN
+ * f := LPAREN l RPAREN
  *    | v
  *
  * v := INT
@@ -192,6 +212,8 @@ let int_ () = or_ "int_" [num; negative_num]
 let value () = or_ "value" [int_; var; bool_]
 
 let rec ifs () =
+  let is_top = is_depth 0 in
+  let _ = incr_depth () in
   let f_1 () =
     let tif = expect_tkn SIF in
     let e1 = ifs () in
@@ -210,11 +232,18 @@ let rec ifs () =
     let xs = many (fun () -> let v = var () in get_name_from_var v) in
     let _ = expect_tkn SEQUAL in
     let e1 = ifs () in
-    let _ = expect_tkn SIN in
-    let e2 = ifs () in
-    let i1 = get_tkn_info hd in
-    let i2 = get_ast_info e2 in
-    Let (name, xs, e1, e2, merge_info [i1; i2])
+    let has_in = accept_tkn SIN in
+    if has_in then
+      let e2 = ifs () in
+      let (i1, i2) = (get_tkn_info hd, get_ast_info e2) in
+      Let (name, xs, e1, e2, merge_info [i1; i2])
+    else if is_top then
+      let () = set_depth 0 in
+      let e2 = ifs () in
+      let (i1, i2) = (get_tkn_info hd, get_ast_info e2) in
+      Declare (name, xs, e1, e2, merge_info [i1; i2])
+    else
+      failwith "can't declare a variable globally"
   in
   or_ "ifs" [f_1; f_2; expr]
 
@@ -255,4 +284,10 @@ and factor () =
   or_ "factor" [value; f_1]
 
 (* main : token_t list -> ast_t *)
-let main ts = ts
+let main ts =
+  init ts;
+  try
+    let e = ifs () in
+    if is_end () then e
+    else failwith "remain"
+  with e -> raise e
