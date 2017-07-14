@@ -242,6 +242,19 @@ let x9 = Plus (x7, x8, (30, 36))
 let x10 = If (x1, x6, x9, (1, 36))
 let () = assert (x10 = e)
 
+let s = "let x=if false then let y=-5 in y+1else 10 in x* 9"
+let ts = Tokenize.main s
+let () = init_status ts
+let e = Parse.ifs ()
+let x1 = False (9, 14)
+let x2 = Int (-5, (26, 28))
+let x3 = Plus (Var ("y", (32, 33)), Int (1, (34, 35)), (32, 35))
+let x4 = Let ("y", [], x2, x3, (20, 35))
+let x5 = If (x1, x4, Int (10, (40, 42)), (6, 42))
+let x6 = Times (Var ("x", (46, 47)), Int (9, (49, 50)), (46, 50))
+let x7 = Let ("x", [], x5, x6, (0, 50))
+let () = assert (x7 = e)
+
 let () = print_endline "<<<<<<<<<<<<<<"
 let () = print_endline "Success"
 let () = print_endline "<<<<<<<<<<<<<<"

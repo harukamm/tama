@@ -144,7 +144,8 @@ let get_and_merge_ast_info ts =
   merge_info info_lst
 
 (*
- * s := IF s THEN s ELSE s
+ * s := LET VAR+ EQUAL s [IN] s
+ *    | IF s THEN s ELSE s
  *    | e
  *
  * e := e PLUS t
@@ -166,6 +167,10 @@ let get_and_merge_ast_info ts =
  *)
 
 exception SNH (* should not happen *)
+let get_name_from_var v = match v with
+  | Var (s, _) -> s
+  | _ -> raise SNH
+
 let num () = match expect_tkn SINT with
   | INT (n, l) -> Int (n, l)
   | _ -> raise SNH
@@ -198,7 +203,20 @@ let rec ifs () =
     let i2 = get_ast_info e3 in
     If (e1, e2, e3, merge_info [i1; i2])
   in
-  or_ "ifs" [f_1; expr]
+  let f_2 () =
+    let hd = expect_tkn SLET in
+    let f = var () in
+    let name = get_name_from_var f in
+    let xs = many (fun () -> let v = var () in get_name_from_var v) in
+    let _ = expect_tkn SEQUAL in
+    let e1 = ifs () in
+    let _ = expect_tkn SIN in
+    let e2 = ifs () in
+    let i1 = get_tkn_info hd in
+    let i2 = get_ast_info e2 in
+    Let (name, xs, e1, e2, merge_info [i1; i2])
+  in
+  or_ "ifs" [f_1; f_2; expr]
 
 and expr () =
   let t1 = term () in
