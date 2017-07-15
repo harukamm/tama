@@ -56,7 +56,6 @@
   padding-right: 5px;
   text-align: right;
   width: 45px;
-  height: 200px;
 }
 
 .codelines, .lineno {
@@ -67,12 +66,12 @@
   box-sizing: border-box;
 }
 
-.text_field.container, .text_field .backdrop, .text_field textarea {
-  height: 200px;
+.text_field.container, .text_field .backdrop, .text_field textarea, .lines {
+  height: 400px;
 }
 
 .text_field .backdrop, .text_field textarea {
-  width: 300px;
+  width: 400px;
 }
 
 .text_field.container textarea, .text_field .highlights {
