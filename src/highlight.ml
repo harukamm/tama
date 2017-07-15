@@ -33,16 +33,16 @@ let span cls content =
 let span2 tkn = span (class_of_token tkn)
 
 (* loop: string state_t -> string -> string *)
-let rec loop ((pt, ss) as st) acc =
+let rec loop ((pt, _, _) as loc, ss) acc =
   try
     begin
-      let (_, tkn) = Tokenize.one_token st in
-      let (pt1, pt2) = get_tkn_info tkn in
+      let (_, tkn) = Tokenize.one_token (loc, ss) in
+      let ((pt1, _, _), ((pt2, _, _) as loc2)) = get_tkn_info tkn in
       let not_token = sub ss pt pt1 in
       let token = sub ss pt1 pt2 in
       let token' = span2 tkn token in
       let acc' = acc ^ not_token ^ token' in
-      loop (pt2, ss) acc'
+      loop (loc2, ss) acc'
     end
   with
   | Tokenize.End_of_input
@@ -50,7 +50,7 @@ let rec loop ((pt, ss) as st) acc =
     let len = String.length ss in
     let rest = if pt < len then sub ss pt len else "" in
     acc ^ rest
-  | Comment_Not_Terminated (pt1, pt2) ->
+  | Comment_Not_Terminated ((pt1, _, _), (pt2, _, _)) ->
     let btn = sub ss pt pt1 in
     let rest = sub ss pt1 pt2 in
     acc ^ btn ^ (span "_tcmt" rest)
@@ -58,4 +58,4 @@ let rec loop ((pt, ss) as st) acc =
     acc
 
 (* main: string -> string *)
-let main s = loop (0, s) ""
+let main s = loop ((0, 0, 0), s) ""

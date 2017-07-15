@@ -1,6 +1,11 @@
 type loc_info =
-  int            (* start *)
-  * int          (* end   *)
+  (int           (* start           *)
+    * int        (* start of lineno *)
+    * int)       (* start of colno  *)
+  *
+  (int           (* end             *)
+    * int        (* end of lineno   *)
+    * int)       (* end of colno    *)
 
 type ast_t =
   | Int of int * loc_info
@@ -99,8 +104,9 @@ let rec tkns_eq syms ts = match (syms,  ts) with
   | (x :: xs, y :: ys) -> (tkn_eq x y) && (tkns_eq xs ys)
 
 let soli (l : loc_info) = match l with
-  (s, e) ->
-    (string_of_int s) ^ ":" ^ (string_of_int e)
+  ((sp, sl, sc), (ep, el, ec)) ->
+    (Util.soi sp) ^ "," ^ (Util.soi sl) ^ "," ^ (Util.soi sc) ^ ":" ^
+      (Util.soi ep) ^ "," ^ (Util.soi el) ^ "," ^ (Util.soi ec)
 
 let get_tkn_info t = match t with
   | INT (_, l) -> l

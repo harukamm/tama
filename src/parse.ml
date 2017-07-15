@@ -136,22 +136,12 @@ let and_ fs =
        h fs
      with e -> set ind; raise e
 
-let valid_info info =
-  let rec h pre lst = match lst with
-    | [] ->
-      true
-    | (p1, p2) :: rest ->
-      (pre <= p1) && (p1 < p2) && (h p2 rest)
-  in
-  info != [] && (h (-1) info)
-
 let merge_info info =
-  let is_valid = valid_info info in
-  let _ = if not is_valid then failwith "Cannot merge invalid location-info" in
+  let _ = if info = [] then failwith "Cannot merge invalid location-info" in
   let len = List.length info in
-  let (p1, _) = List.hd info in
-  let (_, p2) = List.nth info (len - 1) in
-  (p1, p2)
+  let (loc1, _) = List.hd info in
+  let (_, loc2) = List.nth info (len - 1) in
+  (loc1, loc2)
 
 let get_and_merge_tkn_info ts =
   let info_lst = List.map get_tkn_info ts in
