@@ -280,5 +280,5 @@ let x1 = Plus (Int (50, ((8, 1, 0), (9, 1, 1))), Int (1000, ((25, 1, 17), (29, 1
 let () = print_endline "<<<<<<<<<<<<<<"
 let () = print_endline "Success"
 let () = print_endline "<<<<<<<<<<<<<<"
-let () = exit 0
+let h () = exit 0
 

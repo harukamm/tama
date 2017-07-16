@@ -139,6 +139,11 @@ let get_ast_info t = match t with
   | Minus (_, _, l) -> l
   | Times (_, _, l) -> l
   | Divide (_, _, l) -> l
+  | If (_, _, _, l) -> l
+  | Let (_, _, _, _, l) -> l
+  | Declare (_, _, _, _, l) -> l
+  | True (l) -> l
+  | False (l) -> l
 
 let set_ast_info t l = match t with
   | Int (t, _) -> Int (t, l)
@@ -147,6 +152,11 @@ let set_ast_info t l = match t with
   | Minus (t1, t2, _) -> Minus (t1, t2, l)
   | Times (t1, t2, _) -> Times (t1, t2, l)
   | Divide (t1, t2, _) -> Divide (t1, t2, l)
+  | If (e1, e2, e3, _) -> If (e1, e2, e3, l)
+  | Let (x, xs, e1, e2, _) -> Let (x, xs, e1, e2, l)
+  | Declare (x, xs, e1, e2, _) -> Declare (x, xs, e1, e2, l)
+  | True _ -> True (l)
+  | False _ -> False (l)
 
 let rec soa t = match t with
   | Int (i, l) ->
@@ -161,6 +171,9 @@ let rec soa t = match t with
     "Times (" ^ (soa e1) ^ ", " ^ (soa e2) ^ ", " ^ (soli l) ^ ")"
   | Divide (e1, e2, l) ->
     "Divide (" ^ (soa e1) ^ ", " ^ (soa e2) ^ ", " ^ (soli l) ^ ")"
+  | If (e1, e2, e3, l) ->
+    "If (" ^ (soa e1) ^ ", " ^ (soa e2) ^ ", " ^ (soa e3) ^ ", " ^ (soli l) ^ ")"
+  | _ -> failwith "not implemented yet"
 
 let sot t = match t with
   | INT (i, l) ->
