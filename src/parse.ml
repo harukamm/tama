@@ -221,13 +221,14 @@ let value () = or_ "value" [int_; var; bool_]
 let rec tops () =
   let f_1 () =
     let hd = expect_tkn SLET in
+    let is_rec = accept_tkn SREC in
     let f = var () in
     let name = get_name_from_var f in
     let xs = many (fun () -> let v = var () in get_name_from_var v) in
     let _ = expect_tkn SEQUAL in
     let e1 = ifs () in
     let (i1, i2) = (get_tkn_info hd, get_ast_info e1) in
-    Declare (name, xs, e1, merge_info [i1; i2])
+    Declare (name, xs, e1, is_rec, merge_info [i1; i2])
   in
   or_ "tops" [f_1; ifs]
 
@@ -245,6 +246,7 @@ and ifs () =
   in
   let f_2 () =
     let hd = expect_tkn SLET in
+    let is_rec = accept_tkn SREC in
     let f = var () in
     let name = get_name_from_var f in
     let xs = many (fun () -> let v = var () in get_name_from_var v) in
@@ -253,7 +255,7 @@ and ifs () =
     let _ = accept_tkn SIN in
     let e2 = ifs () in
     let (i1, i2) = (get_tkn_info hd, get_ast_info e2) in
-    Let (name, xs, e1, e2, merge_info [i1; i2])
+    Let (name, xs, e1, e2, is_rec, merge_info [i1; i2])
   in
   or_ "ifs" [f_1; f_2; expr]
 

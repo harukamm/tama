@@ -251,16 +251,16 @@ let e = Parse.ifs ()
 let x1 = False (t 9, t 14)
 let x2 = Int (-5, (t 26, t 28))
 let x3 = Plus (Var ("y", (t 32, t 33)), Int (1, (t 34, t 35)), (t 32, t 35))
-let x4 = Let ("y", [], x2, x3, (t 20, t 35))
+let x4 = Let ("y", [], x2, x3, false, (t 20, t 35))
 let x5 = If (x1, x4, Int (10, (t 40, t 42)), (t 6, t 42))
 let x6 = Times (Var ("x", (t 46, t 47)), Int (9, (t 49, t 50)), (t 46, t 50))
-let x7 = Let ("x", [], x5, x6, (t 0, t 50))
+let x7 = Let ("x", [], x5, x6, false, (t 0, t 50))
 let () = assert (x7 = e)
 
 let s = "let x=1;; x+1"
 let ts = Tokenize.main s
 let e = Parse.main ts
-let x1 = Declare ("x", [], Int (1, (t 6, t 7)), (t 0, t 7))
+let x1 = Declare ("x", [], Int (1, (t 6, t 7)), false, (t 0, t 7))
 let x2 = Plus (Var ("x", (t 10, t 11)), Int (1, (t 12, t 13)), (t 10, t 13))
 let x3 = Block ([x1; x2], (t 0, t 13))
 let () = assert (x3 = e)
@@ -292,7 +292,7 @@ let () = assert e
 let s = "let x=50;;\n(*end*)(*end*)(*end*)\n\n"
 let ts = Tokenize.main s
 let e = Parse.main ts
-let x = Declare ("x", [], Int (50, (t 6, t 8)), (t 0, t 8))
+let x = Declare ("x", [], Int (50, (t 6, t 8)), false, (t 0, t 8))
 let () = assert (x = e)
 
 let s = "let x =\n\

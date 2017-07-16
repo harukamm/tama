@@ -15,8 +15,8 @@ type ast_t =
   | Times of ast_t * ast_t * loc_info
   | Divide of ast_t * ast_t * loc_info
   | If of ast_t * ast_t * ast_t * loc_info
-  | Let of string * string list * ast_t * ast_t * loc_info
-  | Declare of string * string list * ast_t * loc_info
+  | Let of string * string list * ast_t * ast_t * bool * loc_info
+  | Declare of string * string list * ast_t * bool * loc_info
   | Block of ast_t list * loc_info
   | True of loc_info
   | False of loc_info
@@ -145,8 +145,8 @@ let get_ast_info t = match t with
   | Times (_, _, l) -> l
   | Divide (_, _, l) -> l
   | If (_, _, _, l) -> l
-  | Let (_, _, _, _, l) -> l
-  | Declare (_, _, _, l) -> l
+  | Let (_, _, _, _, _, l) -> l
+  | Declare (_, _, _, _, l) -> l
   | Block (_, l) -> l
   | True (l) -> l
   | False (l) -> l
@@ -159,8 +159,8 @@ let set_ast_info t l = match t with
   | Times (t1, t2, _) -> Times (t1, t2, l)
   | Divide (t1, t2, _) -> Divide (t1, t2, l)
   | If (e1, e2, e3, _) -> If (e1, e2, e3, l)
-  | Let (x, xs, e1, e2, _) -> Let (x, xs, e1, e2, l)
-  | Declare (x, xs, e, _) -> Declare (x, xs, e, l)
+  | Let (x, xs, e1, e2, r, _) -> Let (x, xs, e1, e2, r, l)
+  | Declare (x, xs, e, r, _) -> Declare (x, xs, e, r, l)
   | Block (es, _) -> Block (es, l)
   | True _ -> True (l)
   | False _ -> False (l)
