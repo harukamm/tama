@@ -103,6 +103,10 @@ let rec tkns_eq syms ts = match (syms,  ts) with
   | ([], _ :: _) -> false
   | (x :: xs, y :: ys) -> (tkn_eq x y) && (tkns_eq xs ys)
 
+let skip_tkn t = match t with
+  | COMMENT _ -> true
+  | _ -> false
+
 let soli (l : loc_info) = match l with
   ((sp, sl, sc), (ep, el, ec)) ->
     (Util.soi sp) ^ "," ^ (Util.soi sl) ^ "," ^ (Util.soi sc) ^ ":" ^

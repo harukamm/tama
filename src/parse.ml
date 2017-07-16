@@ -30,6 +30,20 @@ let get_with index =
 let get () =
   get_with (index ())
 
+let nearest_index ind =
+  let rec h ind' =
+    let t = get_with ind' in
+    if skip_tkn t then h (ind' + 1)
+    else ind'
+  in
+  h ind
+
+let rec consume () =
+  let t = get () in
+  let () = ahead () in
+  if skip_tkn t then consume ()
+  else t
+
 let set pt = ptr := pt
 
 let get_depth () = !depth
@@ -48,34 +62,44 @@ let init ts =
 (* accept: (token_t -> bool) -> bool *)
 let accept p =
   try
-    if p (get ()) then (ahead (); true) else false
+    let ind = index () in
+    if p (consume ()) then true else (set ind; false)
   with Out_of_Index ->
     false
 
 (* expect: (token_t -> bool) -> token_t *)
 let expect p =
-  let x = get () in
-  if p x then (ahead (); x) else (raise (Unexpected x))
+  let ind = index () in
+  let x = consume () in
+  if p x then x else (set ind; raise (Unexpected x))
 
-(* forsee: int -> token_t list *)
-let forsee n =
-  let pt = index () in
-  let rec h dif =
-    let ind = pt + dif in
-    if n <= dif then []
-    else (get_with ind) :: (h (dif + 1))
+(* consume_mult: int -> token_t list *)
+let consume_mult n =
+  let rec h cnt =
+    if n <= cnt then []
+    else
+      let t = consume () in
+      t :: (h (cnt + 1))
   in
-  let max_dif = n - 1 in
-  if is_safe max_dif then h 0
-  else (raise (Not_Found_Match "forsee"))
+  try
+    h 0
+  with _ -> raise (Not_Found_Match "consume_mult")
+
+(* forsee: int -> int * token_t list *)
+let forsee n =
+  let ind = index () in
+  let lst = consume_mult n in
+  let ind' = index () in
+  set ind; (ind', lst)
 
 (* accept_tkn: sym_t -> bool *)
 let accept_tkn sym = accept (tkn_eq sym)
 
 (* expect_mult: int -> (token_t list -> bool) -> token_t list *)
 let expect_mult n p =
-  let lst = forsee n in
-  if p lst then (ahead_with n; lst)
+  let ind = index () in
+  let (ind', lst) = forsee n in
+  if p lst then (ahead_with (ind' - ind); lst)
   else (raise (Not_Found_Match "expect_mult")) 
 
 (* expect_tkn: sym_t -> token *)

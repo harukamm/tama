@@ -148,9 +148,9 @@ let b =
 let () = assert b
 
 let () = init_ptr ()
-let lst = Parse.forsee 3
+let (ind', lst) = Parse.forsee 3
+let () = assert (Parse.index () = 0 && ind' = 3)
 let () = assert (tkns_eq [SINT; SPLUS; SINT] lst)
-let () = assert (Parse.index () = 0)
 let () = assert (let _ = Parse.expect_mult 3 (tkns_eq [SINT; SPLUS; SINT]) in true)
 let () = init_ptr ()
 let () = assert (let _ = Parse.expect_tkns [SINT; SPLUS] in true)
@@ -263,6 +263,19 @@ let e = Parse.main ts
 let x1 = Plus (Var ("x", (t 8, t 9)), Int (1, (t 10, t 11)), (t 8, t 11))
 let x = Declare ("x", [], Int (1, (t 6, t 7)), x1, (t 0, t 11))
 let () = assert (x = e)
+
+let s = "-100 + (* hoge *) \n\
+-1001"
+let ts = Tokenize.main s
+let e = Parse.main ts
+let x = Plus (Int (-100, ((0, 0, 0), (4, 0, 4))), Int (-1001, ((19, 1, 0), (24, 1, 5))), ((0, 0, 0), (24, 1, 5)))
+let () = assert (x = e)
+
+let s = "let x =\n\
+50 + (* hoge *) 1000"
+
+let x1 = Plus (Int (50, ((8, 1, 0), (9, 1, 1))), Int (1000, ((25, 1, 17), (29, 1, 21))), ((8, 1, 0), (29, 1, 21)))
+(* let x = Let ("x", [], x1, x1) *)
 
 let () = print_endline "<<<<<<<<<<<<<<"
 let () = print_endline "Success"
