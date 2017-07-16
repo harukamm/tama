@@ -6,9 +6,9 @@ exception Unexpected of token_t
 
 exception Not_Found_Match of string
 
-let ptr = ref 0
+exception Has_No_Token
 
-let depth = ref 0
+let ptr = ref 0
 
 let tarr : token_t array ref = ref [||]
 
@@ -22,21 +22,23 @@ let ahead_with n = ptr := !ptr + n
 
 let ahead () = ahead_with 1
 
-let is_end () = not (is_safe (index ()))
-
 let get_with index =
   if is_safe index then !tarr.(index) else (raise Out_of_Index)
 
 let get () =
   get_with (index ())
 
-let nearest_index ind =
+let nearest_index () =
   let rec h ind' =
     let t = get_with ind' in
     if skip_tkn t then h (ind' + 1)
-    else ind'
+    else Some (ind')
   in
-  h ind
+  try
+    h (index ())
+  with Out_of_Index -> None
+
+let is_end () = nearest_index () = None
 
 let rec consume () =
   let t = get () in
@@ -46,17 +48,8 @@ let rec consume () =
 
 let set pt = ptr := pt
 
-let get_depth () = !depth
-
-let set_depth d = depth := d
-
-let incr_depth () = set_depth (!depth + 1)
-
-let is_depth d = get_depth () = d
-
 let init ts =
   set 0;
-  set_depth 0;
   set_tkn (Array.of_list ts)
 
 (* accept: (token_t -> bool) -> bool *)
@@ -225,9 +218,21 @@ let bool_ () = match expect_tkn_or [STRUE; SFALSE] with
 let int_ () = or_ "int_" [num; negative_num]
 let value () = or_ "value" [int_; var; bool_]
 
-let rec ifs () =
-  let is_top = is_depth 0 in
-  let _ = incr_depth () in
+let rec tops () =
+  let f_1 () =
+    let hd = expect_tkn SLET in
+    let f = var () in
+    let name = get_name_from_var f in
+    let xs = many (fun () -> let v = var () in get_name_from_var v) in
+    let _ = expect_tkn SEQUAL in
+    let e1 = ifs () in
+    let tl = expect_tkn SDOUBLE_SEMICOLON in
+    let (i1, i2) = (get_tkn_info hd, get_tkn_info tl) in
+    Declare (name, xs, e1, merge_info [i1; i2])
+  in
+  or_ "tops" [f_1; ifs]
+
+and ifs () =
   let f_1 () =
     let tif = expect_tkn SIF in
     let e1 = ifs () in
@@ -246,18 +251,10 @@ let rec ifs () =
     let xs = many (fun () -> let v = var () in get_name_from_var v) in
     let _ = expect_tkn SEQUAL in
     let e1 = ifs () in
-    let has_in = accept_tkn SIN in
-    if has_in then
-      let e2 = ifs () in
-      let (i1, i2) = (get_tkn_info hd, get_ast_info e2) in
-      Let (name, xs, e1, e2, merge_info [i1; i2])
-    else if is_top then
-      let () = set_depth 0 in
-      let e2 = ifs () in
-      let (i1, i2) = (get_tkn_info hd, get_ast_info e2) in
-      Declare (name, xs, e1, e2, merge_info [i1; i2])
-    else
-      failwith "can't declare a variable globally"
+    let _ = accept_tkn SIN in
+    let e2 = ifs () in
+    let (i1, i2) = (get_tkn_info hd, get_ast_info e2) in
+    Let (name, xs, e1, e2, merge_info [i1; i2])
   in
   or_ "ifs" [f_1; f_2; expr]
 
@@ -301,7 +298,9 @@ and factor () =
 let main ts =
   init ts;
   try
-    let e = ifs () in
-    if is_end () then e
-    else failwith "remain"
+    if is_end () then (raise Has_No_Token)
+      else
+        let e = tops () in
+        if is_end () then e
+        else failwith "remain"
   with e -> raise e

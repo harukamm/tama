@@ -257,28 +257,50 @@ let x6 = Times (Var ("x", (t 46, t 47)), Int (9, (t 49, t 50)), (t 46, t 50))
 let x7 = Let ("x", [], x5, x6, (t 0, t 50))
 let () = assert (x7 = e)
 
-let s = "let x=1 x+1"
+let s = "let x=1;; x+1"
 let ts = Tokenize.main s
 let e = Parse.main ts
-let x1 = Plus (Var ("x", (t 8, t 9)), Int (1, (t 10, t 11)), (t 8, t 11))
-let x = Declare ("x", [], Int (1, (t 6, t 7)), x1, (t 0, t 11))
+let x1 = Plus (Var ("x", (t 10, t 11)), Int (1, (t 12, t 13)), (t 10, t 13))
+let x = Declare ("x", [], Int (1, (t 6, t 7)), Some x1, (t 0, t 13))
 let () = assert (x = e)
 
 let s = "-100 + (* hoge *) \n\
 -1001"
 let ts = Tokenize.main s
 let e = Parse.main ts
-let x = Plus (Int (-100, ((0, 0, 0), (4, 0, 4))), Int (-1001, ((19, 1, 0), (24, 1, 5))), ((0, 0, 0), (24, 1, 5)))
+let x = Plus (Int (-100, ((0, 0, 0), (4, 0, 4))),
+  Int (-1001, ((19, 1, 0), (24, 1, 5))), ((0, 0, 0), (24, 1, 5)))
+let () = assert (x = e)
+
+let s = "(*end*)(*end*)(*end*)\n\n"
+let ts = Tokenize.main s
+let e =
+  try
+    let _ = Parse.main ts in
+    false
+  with Parse.Has_No_Token -> true
+let () = assert e
+
+let e =
+  try
+    let _ = Parse.main [] in
+    false
+  with Parse.Has_No_Token -> true
+let () = assert e
+
+let s = "let x=50;;\n(*end*)(*end*)(*end*)\n\n"
+let ts = Tokenize.main s
+let e = Parse.main ts
+let x = Declare ("x", [], Int (50, (t 6, t 8)), None, (t 0, t 10))
 let () = assert (x = e)
 
 let s = "let x =\n\
-50 + (* hoge *) 1000"
-
-let x1 = Plus (Int (50, ((8, 1, 0), (9, 1, 1))), Int (1000, ((25, 1, 17), (29, 1, 21))), ((8, 1, 0), (29, 1, 21)))
-(* let x = Let ("x", [], x1, x1) *)
+50 + (* hoge *) 1000;;"
+let x1 = Plus (Int (50, ((8, 1, 0), (9, 1, 1))),
+  Int (1000, ((25, 1, 17), (29, 1, 21))), ((8, 1, 0), (29, 1, 21)))
 
 let () = print_endline "<<<<<<<<<<<<<<"
 let () = print_endline "Success"
 let () = print_endline "<<<<<<<<<<<<<<"
-let h () = exit 0
+let () = exit 0
 

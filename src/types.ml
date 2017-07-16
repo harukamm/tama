@@ -16,7 +16,8 @@ type ast_t =
   | Divide of ast_t * ast_t * loc_info
   | If of ast_t * ast_t * ast_t * loc_info
   | Let of string * string list * ast_t * ast_t * loc_info
-  | Declare of string * string list * ast_t * ast_t * loc_info
+  | Declare of string * string list * ast_t * loc_info
+  | Block of ast_t list * loc_info
   | True of loc_info
   | False of loc_info
 
@@ -33,6 +34,7 @@ type token_t =
   | DIVIDE of loc_info
   | LPAREN of loc_info
   | RPAREN of loc_info
+  | DOUBLE_SEMICOLON of loc_info
   | COMMENT of string * loc_info
   | LET of loc_info
   | IF of loc_info
@@ -58,6 +60,7 @@ type sym_t =
   | SDIVIDE
   | SLPAREN
   | SRPAREN
+  | SDOUBLE_SEMICOLON
   | SCOMMENT
   | SLET
   | SIF
@@ -79,6 +82,7 @@ let sym_of_token t = match t with
   | LPAREN _ -> SLPAREN
   | RPAREN _ -> SRPAREN
   | COMMENT _ -> SCOMMENT
+  | DOUBLE_SEMICOLON _ -> SDOUBLE_SEMICOLON
   | LET _ -> SLET
   | IF _ -> SIF
   | THEN _ -> STHEN
@@ -122,6 +126,7 @@ let get_tkn_info t = match t with
   | LPAREN (l) -> l
   | RPAREN (l) -> l
   | COMMENT (_, l) -> l
+  | DOUBLE_SEMICOLON (l) -> l
   | LET (l) -> l
   | IF (l) -> l
   | THEN (l) -> l
@@ -192,6 +197,8 @@ let sot t = match t with
     "LRAREN (" ^ (soli l) ^ ")"
   | RPAREN (l) ->
     "RPAREN (" ^ (soli l) ^ ")"
+  | DOUBLE_SEMICOLON (l) ->
+    "DOUBLE_SEMICOLON (" ^ (soli l) ^ ")"
   | COMMENT (s, l) ->
     "COMMENT (" ^ s ^ "," ^ (soli l) ^ ")"
   | LET (l) ->

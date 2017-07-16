@@ -10,6 +10,7 @@ let class_of_token tkn = match tkn with
   | DIVIDE _ -> "_tad"
   | LPAREN _ -> "_tlp"
   | RPAREN _ -> "_trp"
+  | DOUBLE_SEMICOLON _ -> "_tdsc"
   | COMMENT _ -> "_tcmt"
   | LET _ -> "_tlet"
   | IF _ -> "_tif"
