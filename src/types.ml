@@ -146,7 +146,8 @@ let get_ast_info t = match t with
   | Divide (_, _, l) -> l
   | If (_, _, _, l) -> l
   | Let (_, _, _, _, l) -> l
-  | Declare (_, _, _, _, l) -> l
+  | Declare (_, _, _, l) -> l
+  | Block (_, l) -> l
   | True (l) -> l
   | False (l) -> l
 
@@ -159,7 +160,8 @@ let set_ast_info t l = match t with
   | Divide (t1, t2, _) -> Divide (t1, t2, l)
   | If (e1, e2, e3, _) -> If (e1, e2, e3, l)
   | Let (x, xs, e1, e2, _) -> Let (x, xs, e1, e2, l)
-  | Declare (x, xs, e1, e2, _) -> Declare (x, xs, e1, e2, l)
+  | Declare (x, xs, e, _) -> Declare (x, xs, e, l)
+  | Block (es, _) -> Block (es, l)
   | True _ -> True (l)
   | False _ -> False (l)
 

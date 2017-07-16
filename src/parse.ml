@@ -226,8 +226,7 @@ let rec tops () =
     let xs = many (fun () -> let v = var () in get_name_from_var v) in
     let _ = expect_tkn SEQUAL in
     let e1 = ifs () in
-    let tl = expect_tkn SDOUBLE_SEMICOLON in
-    let (i1, i2) = (get_tkn_info hd, get_tkn_info tl) in
+    let (i1, i2) = (get_tkn_info hd, get_ast_info e1) in
     Declare (name, xs, e1, merge_info [i1; i2])
   in
   or_ "tops" [f_1; ifs]
@@ -294,13 +293,27 @@ and factor () =
   in
   or_ "factor" [value; f_1]
 
+(* loop : unit -> ast_t list *)
+let rec loop () =
+  let e = tops () in
+  let cs = accept_tkn SDOUBLE_SEMICOLON in
+  if is_end () then [e]
+  else
+    if cs then e :: loop ()
+    else failwith "Parsing error. Are you missing `;;`?"
+
 (* main : token_t list -> ast_t *)
 let main ts =
   init ts;
   try
-    if is_end () then (raise Has_No_Token)
-      else
-        let e = tops () in
-        if is_end () then e
-        else failwith "remain"
+    let _ = if is_end () then (raise Has_No_Token) in
+    let es = loop () in
+    match es with
+    | [] ->
+      raise SNH
+    | [x] ->
+      x
+    | x :: xs ->
+      let x' = List.hd (List.tl es) in
+      Block (es, get_and_merge_ast_info [x; x'])
   with e -> raise e
