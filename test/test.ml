@@ -345,6 +345,39 @@ let x2 = Let ("x_1", ["x1_2"; "x2_3"], Times (Times (Var ("x_1", l), Var ("x1_2"
 let x3 = Let ("x_0", [], Int (5, l), x2, false, l)
 let () = assert (ast_eq x3 e)
 
+let pre_t s =
+  let ts = Tokenize.main s in
+  let e = Parse.main ts in
+  Tamavm_pre.main e
+
+let e =
+  try
+    let _ = pre_t s in
+    true
+  with Tamavm_pre.Not_Supported (_, info) -> info = ((42, 1, 14), (43, 1, 15))
+let () = assert e
+
+let s = "\
+let x = 5;;\n\
+x"
+let e = pre_t s
+let x1 = Declare ("x_0", [], Int (5, (t 8, t 9)), false, (t 0, t 9))
+let x2 = Var ("x_0", ((12, 1, 0), (13, 1, 1)))
+let x3 = Block (x1 :: [x2], (t 0, (13, 1, 1)))
+let () = assert (x3 = e)
+
+let s = "\
+let x = 50 + 100 in\n\
+let f y = x + y in\n\
+f"
+
+let e =
+  try
+    let _ = pre_t s in
+    false
+  with Tamavm_pre.Not_Supported (_, info) -> info = ((30, 1, 10), (31, 1, 11))
+let () = assert e
+
 let () = print_endline "<<<<<<<<<<<<<<"
 let () = print_endline "Success"
 let () = print_endline "<<<<<<<<<<<<<<"
