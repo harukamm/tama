@@ -286,14 +286,31 @@ and term () =
   or_ "term" [f_1; (fun () -> f1)]
 
 and factor () =
-  let f_1 () =
+  let f_1_1 () =
     let lprn = expect_tkn SLPAREN in
     let e = ifs () in
     let rprn = expect_tkn SRPAREN in
     let info' = get_and_merge_tkn_info [lprn; rprn] in
     set_ast_info e info'
   in
-  or_ "factor" [value; f_1]
+  let f_1 () =
+    or_ "fac_f_1" [value; f_1_1]
+  in
+  let e1 = f_1 () in
+  let f_2 () =
+    let lst = [SGREATER_THAN_EQ; SGREATER_THAN; SLESS_THAN_EQ; SLESS_THAN; SEQUAL] in
+    let tkn = expect_tkn_or lst in
+    let e2 = f_1 () in
+    let info = get_and_merge_ast_info [e1; e2] in
+    match tkn with
+    | GREATER_THAN_EQ (l) -> GreaterThan (e1, e2, true, info)
+    | GREATER_THAN (l) -> GreaterThan (e1, e2, false, info)
+    | LESS_THAN_EQ (l) -> LessThan (e1, e2, true, info)
+    | LESS_THAN (l) -> LessThan (e1, e2, false, info)
+    | EQUAL (l) -> Equal (e1, e2, info)
+    | _ -> raise SNH
+  in
+  or_ "factor" [f_2; (fun () -> e1)]
 
 (* loop : unit -> ast_t list *)
 let rec loop () =

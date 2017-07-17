@@ -162,6 +162,7 @@ let one_token (loc, ss) =
           let nxt = pt1 + 1 in
           let myb_cmt = nxt < len && String.get ss nxt = '*' in
           let nxt_sc = nxt < len && String.get ss nxt = ';' in
+          let nxt_eq = nxt < len && String.get ss nxt = '=' in
           let loc2 = (pt1 + 1, lno1, cno1 + 1) in
           let info = (loc1, loc2) in
           match c with
@@ -180,6 +181,14 @@ let one_token (loc, ss) =
             | ';' when nxt_sc ->
               let loc2 = (pt1 + 2, lno1, cno1 + 2) in
               (loc2, DOUBLE_SEMICOLON (loc1, loc2))
+            | '>' when nxt_eq ->
+              let loc2 = (pt1 + 2, lno1, cno1 + 2) in
+              (loc2, GREATER_THAN_EQ (info))
+            | '<' when nxt_eq ->
+              let loc2 = (pt1 + 2, lno1, cno1 + 2) in
+              (loc2, LESS_THAN_EQ (info))
+            | '>' -> (loc2, GREATER_THAN (info))
+            | '<' -> (loc2, LESS_THAN (info))
             | _ ->
               let (loc2, str) = until_spaces (loc1, ss) in
               let info = (loc1, loc2) in

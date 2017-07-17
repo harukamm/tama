@@ -20,6 +20,9 @@ type ast_t =
   | Block of ast_t list * loc_info
   | True of loc_info
   | False of loc_info
+  | GreaterThan of ast_t * ast_t * bool * loc_info
+  | LessThan of ast_t * ast_t * bool * loc_info
+  | Equal of ast_t * ast_t * loc_info
 
 exception Tokenize_Error of (string * loc_info)
 
@@ -45,6 +48,10 @@ type token_t =
   | IN of loc_info
   | TRUE of loc_info
   | FALSE of loc_info
+  | GREATER_THAN_EQ of loc_info
+  | GREATER_THAN of loc_info
+  | LESS_THAN_EQ of loc_info
+  | LESS_THAN of loc_info
 
 type app_states_t = {
   is_executing: bool;
@@ -71,6 +78,10 @@ type sym_t =
   | SIN
   | STRUE
   | SFALSE
+  | SGREATER_THAN_EQ
+  | SGREATER_THAN
+  | SLESS_THAN_EQ
+  | SLESS_THAN
 
 let sym_of_token t = match t with
   | INT _ -> SINT
@@ -92,6 +103,10 @@ let sym_of_token t = match t with
   | IN _ -> SIN
   | TRUE _ -> STRUE
   | FALSE _ -> SFALSE
+  | GREATER_THAN_EQ _ -> SGREATER_THAN_EQ
+  | GREATER_THAN _ -> SGREATER_THAN
+  | LESS_THAN_EQ _ -> SLESS_THAN_EQ
+  | LESS_THAN _ -> SLESS_THAN
 
 let tkn_eq sym t =
   let sym' = sym_of_token t in
@@ -136,6 +151,12 @@ let get_tkn_info t = match t with
   | IN (l) -> l
   | TRUE (l) -> l
   | FALSE (l) -> l
+  | GREATER_THAN_EQ (l) -> l
+  | GREATER_THAN (l) -> l
+  | LESS_THAN_EQ (l) -> l
+  | LESS_THAN (l) -> l
+
+
 
 let get_ast_info t = match t with
   | Int (_, l) -> l
@@ -150,6 +171,9 @@ let get_ast_info t = match t with
   | Block (_, l) -> l
   | True (l) -> l
   | False (l) -> l
+  | GreaterThan (_, _, _, l) -> l
+  | LessThan (_, _, _, l) -> l
+  | Equal (_, _, l) -> l
 
 let set_ast_info t l = match t with
   | Int (t, _) -> Int (t, l)
@@ -164,6 +188,9 @@ let set_ast_info t l = match t with
   | Block (es, _) -> Block (es, l)
   | True _ -> True (l)
   | False _ -> False (l)
+  | GreaterThan (e1, e2, b, _) -> GreaterThan (e1, e2, b, l)
+  | LessThan (e1, e2, b, _) -> LessThan (e1, e2, b, l)
+  | Equal (e1, e2, _) -> Equal (e1, e2, l)
 
 let rec soa t = match t with
   | Int (i, l) ->
@@ -221,6 +248,7 @@ let sot t = match t with
     "TRUE (" ^ (soli l) ^ ")"
   | FALSE (l) ->
     "FALSE (" ^ (soli l) ^ ")"
+  | _ -> failwith "not implemented yet"
 
 let string_of_linfo = soli
 

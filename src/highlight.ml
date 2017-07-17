@@ -21,6 +21,10 @@ let class_of_token tkn = match tkn with
   | IN _ -> "_tin"
   | TRUE _ -> "_ttru"
   | FALSE _ -> "_tfls"
+  | GREATER_THAN_EQ _ -> "_tb"
+  | GREATER_THAN _ -> "_tb"
+  | LESS_THAN_EQ _ -> "_tb"
+  | LESS_THAN _ -> "_tb"
 
 (* sub: string -> int -> int -> string *)
 let sub s in1 in2 =

@@ -295,6 +295,16 @@ let e = Parse.main ts
 let x = Declare ("x", [], Int (50, (t 6, t 8)), false, (t 0, t 8))
 let () = assert (x = e)
 
+let s = "if 5 < 10 then 1 >= -2 else false <= 1"
+let ts = Tokenize.main s
+let e = Parse.main ts
+let x1 = LessThan (Int (5, (t 3, t 4)), Int (10, (t 7, t 9)), false, (t 3, t 9))
+let x2 = GreaterThan (Int (1, (t 15, t 16)), Int (-2, (t 20, t 22)), true, (t 15, t 22))
+let x3 = False (t 28, t 33)
+let x4 = LessThan (x3, Int (1, (t 37, t 38)), true, (t 28, t 38))
+let x = If (x1, x2, x4, (t 0, t 38))
+let () = assert (x = e)
+
 let s = "let x =\n\
 50 + (* hoge *) 1000;;"
 let x1 = Plus (Int (50, ((8, 1, 0), (9, 1, 1))),
