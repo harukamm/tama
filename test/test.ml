@@ -305,6 +305,20 @@ let x4 = LessThan (x3, Int (1, (t 37, t 38)), true, (t 28, t 38))
 let x = If (x1, x2, x4, (t 0, t 38))
 let () = assert (x = e)
 
+let s = "((x(-5)(7*-2 < 1))\n\
+(9+3)) -100"
+let ts = Tokenize.main s
+let e = Parse.main ts
+let x1 = Var ("x", (t 2, t 3))
+let x2 = Int (-5, (t 3, t 7))
+let x3 = LessThan (Int (-2, (t 10, t 12)), Int (1, (t 15, t 16)), false, (t 10, t 16))
+let x4 = Times (Int (7, (t 8, t 9)), x3, (t 7, t 17))
+let x5 = App (x1, [x2; x4], (t 1, t 18))
+let x6 = Plus (Int (9, ((20, 1, 1), (21, 1, 2))), Int (3, ((22, 1, 3), (23, 1, 4))), ((19, 1, 0), (24, 1, 5)))
+let x7 = App (x5, [x6], (t 0, (25, 1, 6)))
+let x = Minus (x7, Int (100, ((27, 1, 8), (30, 1, 11))), (t 0, (30, 1, 11)))
+let () = assert (x = e)
+
 let s = "let x =\n\
 50 + (* hoge *) 1000;;"
 let x1 = Plus (Int (50, ((8, 1, 0), (9, 1, 1))),

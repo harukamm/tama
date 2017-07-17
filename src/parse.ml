@@ -169,10 +169,8 @@ let get_and_merge_ast_info ts =
   merge_info info_lst
 
 (*
- * l := LET VAR+ EQUAL l [IN] l
- *    | s
- *
- * s := IF s THEN s ELSE s
+ * s := LET VAR+ EQUAL s [IN s]
+ *    | IF s THEN s ELSE s
  *    | e
  *
  * e := e PLUS t
@@ -183,7 +181,7 @@ let get_and_merge_ast_info ts =
  *    | t DIVIDE f
  *    | f
  *
- * f := LPAREN l RPAREN
+ * f := LPAREN s RPAREN
  *    | v
  *
  * v := INT
@@ -191,6 +189,10 @@ let get_and_merge_ast_info ts =
  *    | VAR
  *    | TRUE
  *    | FALSE
+ *    | f LESSTHAN f
+ *    | f GREATERTHAN f
+ *    | f EQUAL f
+ *    | f+
  *)
 
 exception SNH (* should not happen *)
@@ -206,6 +208,11 @@ let negative_num () = match expect_tkns [SMINUS; SINT] with
   | [MINUS (l1); INT (n, l2)] -> Int (-n, merge_info [l1; l2])
   | _ -> raise SNH
 
+let negative_num_2 () = match expect_tkns [SLPAREN; SMINUS; SINT; SRPAREN] with
+  | [LPAREN (l1); MINUS _; INT (n, _); RPAREN (l2)] ->
+    Int (-n, merge_info [l1; l2])
+  | _ -> raise SNH
+
 let var () = match expect_tkn SVAR with
   | VAR (s, l) -> Var (s, l)
   | _ -> raise SNH
@@ -217,6 +224,7 @@ let bool_ () = match expect_tkn_or [STRUE; SFALSE] with
 
 let int_ () = or_ "int_" [num; negative_num]
 let value () = or_ "value" [int_; var; bool_]
+let value_2 () = or_ "value_2" [num; negative_num_2; var; bool_]
 
 let rec tops () =
   let f_1 () =
@@ -310,7 +318,13 @@ and factor () =
     | EQUAL (l) -> Equal (e1, e2, info)
     | _ -> raise SNH
   in
-  or_ "factor" [f_2; (fun () -> e1)]
+  let f_3 () =
+    let es = many1 (fun () -> or_ "fac_f_3" [value_2; f_1_1]) in
+    let last = List.hd (List.rev es) in
+    let info = get_and_merge_ast_info [e1; last] in
+    App (e1, es, info)
+  in
+  or_ "factor" [f_2; f_3; (fun () -> e1)]
 
 (* loop : unit -> ast_t list *)
 let rec loop () =

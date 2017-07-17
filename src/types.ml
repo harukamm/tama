@@ -23,6 +23,7 @@ type ast_t =
   | GreaterThan of ast_t * ast_t * bool * loc_info
   | LessThan of ast_t * ast_t * bool * loc_info
   | Equal of ast_t * ast_t * loc_info
+  | App of ast_t * ast_t list * loc_info
 
 exception Tokenize_Error of (string * loc_info)
 
@@ -174,6 +175,7 @@ let get_ast_info t = match t with
   | GreaterThan (_, _, _, l) -> l
   | LessThan (_, _, _, l) -> l
   | Equal (_, _, l) -> l
+  | App (_, _, l) -> l
 
 let set_ast_info t l = match t with
   | Int (t, _) -> Int (t, l)
@@ -191,6 +193,7 @@ let set_ast_info t l = match t with
   | GreaterThan (e1, e2, b, _) -> GreaterThan (e1, e2, b, l)
   | LessThan (e1, e2, b, _) -> LessThan (e1, e2, b, l)
   | Equal (e1, e2, _) -> Equal (e1, e2, l)
+  | App (e1, es, _) -> App (e1, es, l)
 
 let rec soa t = match t with
   | Int (i, l) ->
