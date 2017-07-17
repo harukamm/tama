@@ -123,6 +123,42 @@ let rec tkns_eq syms ts = match (syms,  ts) with
   | ([], _ :: _) -> false
   | (x :: xs, y :: ys) -> (tkn_eq x y) && (tkns_eq xs ys)
 
+let rec ast_eq e1 e2 = match (e1, e2) with
+  | (Int (t1, _), Int (t2, _)) ->
+    t1 = t2
+  | (Var (t1, _), Var (t2, _)) ->
+    t1 = t2
+  | (Plus (t1, t2, _), Plus (t3, t4, _)) ->
+    (ast_eq t1 t3) && (ast_eq t2 t4)
+  | (Minus (t1, t2, _), Minus (t3, t4, _)) ->
+    (ast_eq t1 t3) && (ast_eq t2 t4)
+  | (Times (t1, t2, _), Times (t3, t4, _)) ->
+    (ast_eq t1 t3) && (ast_eq t2 t4)
+  | (Divide (t1, t2, _), Divide (t3, t4, _)) ->
+    (ast_eq t1 t3) && (ast_eq t2 t4)
+  | (If (e1, e2, e3, _), If (e4, e5, e6, _)) ->
+    (ast_eq e1 e4) && (ast_eq e2 e5) && (ast_eq e3 e6)
+  | (Let (x, xs, e1, e2, r1, _), Let (y, ys, e3, e4, r2, _)) ->
+    (r1 = r2) && (x = y) && (xs = ys) && (ast_eq e1 e3) && (ast_eq e2 e4)
+  | (Declare (x, xs, e1, r1, _), Declare (y, ys, e2, r2, _)) ->
+    (r1 = r2) && (x = y) && (xs = ys) && (ast_eq e1 e2)
+  | (Block (es1, _), Block (es2, _)) when List.length es1 = List.length es2 ->
+    let pairs = Util.zip es1 es2 in
+    List.for_all (fun (e1, e2) -> ast_eq e1 e2) pairs
+  | (True _, True _)
+  | (False _, False _) ->
+    true
+  | (GreaterThan (e1, e2, b1, _), GreaterThan (e3, e4, b2, _))
+  | (LessThan (e1, e2, b1, _), LessThan (e3, e4, b2, _)) ->
+    (b1 = b2) && (ast_eq e1 e3) && (ast_eq e2 e4)
+  | (Equal (e1, e2, _), Equal (e3, e4, _)) ->
+    (ast_eq e1 e3) && (ast_eq e2 e4)
+  | (App (e1, es1, _), App (e2, es2, _)) ->
+    let pairs = Util.zip es1 es2 in
+    (ast_eq e1 e2) && (List.for_all (fun (e1, e2) -> ast_eq e1 e2) pairs)
+  | _ ->
+    false
+
 let skip_tkn t = match t with
   | COMMENT _ -> true
   | _ -> false
@@ -252,6 +288,44 @@ let sot t = match t with
   | FALSE (l) ->
     "FALSE (" ^ (soli l) ^ ")"
   | _ -> failwith "not implemented yet"
+
+let rec disp_ast e = match e with
+  | Int (t, _) ->
+    string_of_int t
+  | Var (t, _) ->
+    t
+  | Plus (t1, t2, _) ->
+    "(" ^ (disp_ast t1) ^ "+" ^ (disp_ast t2) ^ ")"
+  | Minus (t1, t2, _) ->
+    "(" ^ (disp_ast t1) ^ "-" ^ (disp_ast t2) ^ ")"
+  | Times (t1, t2, _) ->
+    "(" ^ (disp_ast t1) ^ "*" ^ (disp_ast t2) ^ ")"
+  | Divide (t1, t2, _) ->
+    "(" ^ (disp_ast t1) ^ "/" ^ (disp_ast t2) ^ ")"
+  | If (e1, e2, e3, _) ->
+    "if " ^ (disp_ast e1) ^ " then " ^ (disp_ast e2) ^ " else " ^ (disp_ast e3)
+  | Let (x, xs, e1, e2, r, _) ->
+    "let " ^ (if r then "rec " else "") ^ x ^ " " ^
+      (Util.string_of_list (fun x -> x) xs) ^ " = " ^
+      (disp_ast e1) ^ "\nin " ^ (disp_ast e2)
+  | Declare (x, xs, e, r, _) ->
+    "let " ^ (if r then "rec " else "") ^ x ^ " " ^
+      (Util.string_of_list (fun x -> x) xs) ^ " = " ^
+      (disp_ast e)
+  | Block (es, _) ->
+    Util.join ";;\n" disp_ast es
+  | True _ ->
+    "true"
+  | False _ ->
+    "false"
+  | GreaterThan (e1, e2, b, _) ->
+    (disp_ast e1) ^ " >" ^ (if b then "=" else "") ^ " " ^ (disp_ast e2)
+  | LessThan (e1, e2, b, _) ->
+    (disp_ast e1) ^ " <" ^ (if b then "=" else "") ^ " " ^ (disp_ast e2)
+  | Equal (e1, e2, _) ->
+    (disp_ast e1) ^ " = " ^ (disp_ast e2)
+  | App (e1, es, _) ->
+    (disp_ast e1) ^ " " ^ (Util.join " " disp_ast es)
 
 let string_of_linfo = soli
 

@@ -238,7 +238,7 @@ let rec tops () =
     let (i1, i2) = (get_tkn_info hd, get_ast_info e1) in
     Declare (name, xs, e1, is_rec, merge_info [i1; i2])
   in
-  or_ "tops" [f_1; ifs]
+  or_ "tops" [ifs; f_1]
 
 and ifs () =
   let f_1 () =

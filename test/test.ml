@@ -3,6 +3,7 @@
 #load "tokenize.cmo";;
 #load "parse.cmo";;
 #load "highlight.cmo";;
+#load "tamavm_pre.cmo";;
 
 open Types;;
 
@@ -18,8 +19,8 @@ let soi = string_of_int
 let s1 = Util.string_of_list Util.soi [1; 2; 3]
 let s2 = Util.string_of_list (fun x -> x) ["a"; "b"; "c"]
 
-let () = assert ("[1; 2; 3]" = s1)
-let () = assert ("[a; b; c]" = s2)
+let () = assert ("1; 2; 3" = s1)
+let () = assert ("a; b; c" = s2)
 
 
 (* Tokenize test *)
@@ -323,6 +324,26 @@ let s = "let x =\n\
 50 + (* hoge *) 1000;;"
 let x1 = Plus (Int (50, ((8, 1, 0), (9, 1, 1))),
   Int (1000, ((25, 1, 17), (29, 1, 21))), ((8, 1, 0), (29, 1, 21)))
+
+
+(* VM pre test *)
+
+let alpha_t s =
+  let ts = Tokenize.main s in
+  let e = Parse.main ts in
+  Tamavm_pre.alpha_main e
+
+let l = (t 0, t 0)
+let s = "\
+let x = 5 in (* x -> x_0 *)
+let x x1 x2 = x*x1*x2 in (* x -> x_1, x1 -> x1_2, x2 -> x2_3 *)
+let rec x = x in (* x -> x_4 *)
+x"
+let e = alpha_t s
+let x1 = Let ("x_4", [], Var ("x_4", l), Var ("x_4", l), true, l)
+let x2 = Let ("x_1", ["x1_2"; "x2_3"], Times (Times (Var ("x_1", l), Var ("x1_2", l), l), Var ("x2_3", l), l), x1, false, l)
+let x3 = Let ("x_0", [], Int (5, l), x2, false, l)
+let () = assert (ast_eq x3 e)
 
 let () = print_endline "<<<<<<<<<<<<<<"
 let () = print_endline "Success"
