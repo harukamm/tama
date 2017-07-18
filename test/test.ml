@@ -4,6 +4,7 @@
 #load "parse.cmo";;
 #load "highlight.cmo";;
 #load "tamavm_pre.cmo";;
+#load "tamavm.cmo";;
 
 open Types;;
 
@@ -378,8 +379,19 @@ let e =
   with Tamavm_pre.Not_Supported (_, info) -> info = ((30, 1, 10), (31, 1, 11))
 let () = assert e
 
+
+(* VM test *)
+
+let emit s =
+  let _ = print_endline ("source: " ^ s) in
+  let e = pre_t s in
+  Tamavm.emit e
+
+let s = "let f x = x + 50 in f 2"
+let e = emit s
+
 let () = print_endline "<<<<<<<<<<<<<<"
 let () = print_endline "Success"
 let () = print_endline "<<<<<<<<<<<<<<"
-let () = exit 0
+(* let () = exit 0 *)
 

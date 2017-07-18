@@ -6,7 +6,7 @@ CMOS := $(SOURCES:test/%.ml=test/%.cmo)
 # RESULT := tama_test
 
 all: $(CMOS)
-	ocaml -I test -init test/test.ml
+	rlwrap ocaml -I test -init test/test.ml
 
 clean:
 	rm -f test/*.cmi test/*.cmo

@@ -7,6 +7,31 @@ type loc_info =
     * int        (* end of lineno   *)
     * int)       (* end of colno    *)
 
+type op_t = ADD
+          | SUB
+          | MUL
+          | DIV
+          | PUSH of int
+          | JZ of int
+          | JNZ
+          | GTEQ
+          | GT
+          | LSEQ
+          | EQ
+          | LS
+          | CALL of int
+          | RETURN
+          | LABEL of int
+          | MOV of int
+          | WithInfo of op_t list * loc_info
+
+type oploc_t = op_t * loc_info
+
+type opcode_t = {
+  funcs: (string * oploc_t list) list;
+  main: oploc_t list
+}
+
 type ast_t =
   | Int of int * loc_info
   | Var of string * loc_info
@@ -334,3 +359,40 @@ let string_of_ast = soa
 let string_of_token = sot
 
 let string_of_tokens = Util.string_of_list sot
+
+(* display_op : op_t -> string *)
+let display_op op = match op with
+  | ADD -> "ADD"
+  | SUB -> "SUB"
+  | MUL -> "MUL"
+  | DIV -> "DIV"
+  | PUSH (i) -> "PUSH " ^ (string_of_int i)
+  | JZ (i) -> "JZ " ^ (string_of_int i)
+  | JNZ -> "JNZ"
+  | GTEQ -> "GTEQ"
+  | GT -> "GT"
+  | LSEQ -> "LSEQ"
+  | EQ -> "EQ"
+  | LS -> "LS"
+  | CALL (i) -> "CALL " ^ (string_of_int i)
+  | RETURN -> "RETURN"
+  | LABEL (i) -> "LABEL " ^ (string_of_int i)
+  | MOV (i) -> "MOV " ^ (string_of_int i)
+  | WithInfo _ -> failwith "not supported"
+
+(* display_oplocs_h : string -> oploc_t list -> string *)
+let rec display_aplocs_h prefix ops = match ops with
+  | [] ->
+    ""
+  | (o, _) :: xs ->
+    (prefix ^ (display_op o) ^ "\n") ^ (display_aplocs_h prefix xs)
+
+(* display_opcode: opcode_t -> string *)
+let display_opcode { funcs = c1; main = c2 } =
+  let h s (name, ops) =
+    s ^ name ^ ":\n" ^ (display_aplocs_h "  " ops)
+  in
+  let func' = List.fold_left h "" c1 in
+  let main' = display_aplocs_h "  " c2 in
+  func' ^ "\n" ^ main'
+
