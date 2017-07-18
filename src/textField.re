@@ -13,7 +13,8 @@ type state = {
   codeLinesDiv_: option Dom.element,
   content: string,
   text_height: int,
-  max_text_height: int
+  max_text_height: int,
+  on_content: string => unit
 };
 
 let queries =
@@ -142,8 +143,10 @@ let handleInput (e : ReactEventRe.Form.t) {ReasonReact.state: state} => {
       Rutil.setInnerHTML e text
     }
   };
+  let _ = state.on_content value;
+  let state' = {...state, content: value};
   let cnt = Rutil.count_br value;
-  setLineNumber cnt state;
+  setLineNumber cnt state';
 };
 
 let addPasteListener elm => {
@@ -158,7 +161,7 @@ let addPasteListener elm => {
 
 let component = ReasonReact.statefulComponent "";
 
-let make _children => {
+let make ::onContent _children => {
   ...component,
 
   initialState: fun _ => {
@@ -170,7 +173,8 @@ let make _children => {
     codeLinesDiv_: None,
     content: "",
     text_height: 1,
-    max_text_height: 0
+    max_text_height: 0,
+    on_content: onContent
   },
 
   didMount: fun {ReasonReact.state: state} => {
@@ -181,14 +185,6 @@ let make _children => {
       Rutil.setInnerHTML e text
     | _ => ()
     };
-    let (opt_lines, state) = getReferAndNewState 4 state;
-    switch opt_lines {
-    | Some e =>
-      let height = Rutil.get_style_height e;
-      Js.log height;
-    | _ => ()
-    };
-    /* setLineNumber cnt self; */
     ReasonReact.Update state;
   },
 
