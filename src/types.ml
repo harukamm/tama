@@ -11,6 +11,7 @@ type op_t = ADD
           | SUB
           | MUL
           | DIV
+          | PUSHP of string
           | PUSH of int
           | JZ of int
           | JNZ
@@ -23,6 +24,7 @@ type op_t = ADD
           | RETURN
           | LABEL of int
           | MOV of int
+          | POPE of int
           | WithInfo of op_t list * loc_info
 
 type oploc_t = op_t * loc_info
@@ -366,6 +368,7 @@ let display_op op = match op with
   | SUB -> "SUB"
   | MUL -> "MUL"
   | DIV -> "DIV"
+  | PUSHP (f) -> "PUSHP " ^ f
   | PUSH (i) -> "PUSH " ^ (string_of_int i)
   | JZ (i) -> "JZ " ^ (string_of_int i)
   | JNZ -> "JNZ"
@@ -378,6 +381,7 @@ let display_op op = match op with
   | RETURN -> "RETURN"
   | LABEL (i) -> "LABEL " ^ (string_of_int i)
   | MOV (i) -> "MOV " ^ (string_of_int i)
+  | POPE (i) -> "POPE " ^ (string_of_int i)
   | WithInfo _ -> failwith "not supported"
 
 (* display_oplocs_h : string -> oploc_t list -> string *)

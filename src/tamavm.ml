@@ -25,42 +25,85 @@ let rec stack_maps t n = match t with
     let m2 = stack_maps e2 n in
     let m3 = stack_maps e3 n in
     m1 @ m2 @ m3
+  | Let (x, [], e1, e2, _, l) ->
+    let (m', n1) = ((x, n), n + 1) in
+    let m1 = stack_maps e1 n1 in
+    let m2 = stack_maps e2 n1 in
+    m' :: m1 @ m2
+  | Declare (x, [], e1, _, l) ->
+    let (m', n1) = ((x, n), n + 1) in
+    let m1 = stack_maps e1 n1 in
+    m' :: m1
   | Let (x, xs, e1, e2, is_rec, l) ->
-    let (m, n1) = ([(x, n)], n + 1) in
     let (m', n2) =
-      List.fold_left (fun (l, i) a -> ((a, i) :: l), i + 1) (m, n1) xs in
+      List.fold_left (fun (l, i) a -> ((a, i) :: l), i + 1) ([], n) xs in
     let m1 = stack_maps e1 n2 in
     let m2 = stack_maps e2 (n + 1) in
     m' @ m1 @ m2
   | Declare (x, xs, e1, is_rec, l) ->
-    let (m, n1) = ([(x, n)], n + 1) in
     let (m', n2) =
-      List.fold_left (fun (l, i) a -> ((a, i) :: l, i + 1)) (m, n1) xs in
+      List.fold_left (fun (l, i) a -> ((a, i) :: l, i + 1)) ([], n) xs in
     let m1 = stack_maps e1 n2 in
     m' @ m1
   | Block (es, l) ->
     begin
-      let h (l, i) e = match e with
-        | Let (x, _, _, _, _, _) -> (l, i + 1)
-        | Declare (x, _, _, _, _) -> (l, i + 1)
-        | _ -> (l @ (stack_maps e i), i)
+      let h (m, n1) e = match e with
+        | Let (x, [], _, _, _, _)
+        | Declare (x, [], _, _, _) -> (m, n1 + 1)
+        | _ ->
+          let m1 = stack_maps e n1 in
+          (m1 @ m, n1)
       in
       let (m, _) = List.fold_left h ([], n) es in
       m
     end
-  | GreaterThan (e1, e2, eq, l) | LessThan (e1, e2, eq, l) ->
-    let m1 = stack_maps e1 n in
-    let m2 = stack_maps e2 (n + 1) in
-    m1 @ m2
-  | Equal (e1, e2, l) ->
+  | GreaterThan (e1, e2, _, _)
+  | LessThan (e1, e2, _, _)
+  | Equal (e1, e2, _) ->
     let m1 = stack_maps e1 n in
     let m2 = stack_maps e2 (n + 1) in
     m1 @ m2
   | App (x, xs, l) ->
-    []
+    let x' = stack_maps x n in
+    let xs' = List.map (fun e -> stack_maps e n) xs in
+    x' @ (List.concat xs')
   | True (l) ->
     []
   | False (l) ->
+    []
+
+(* collect_funcs: ast_t -> string list *)
+let rec collect_funcs t = match t with
+  | Int _ ->
+    []
+  | Var _ ->
+    []
+  | Plus (e1, e2, _) | Minus (e1, e2, _)
+  | Times (e1, e2, _) | Divide (e1, e2, _) ->
+    (collect_funcs e1) @ (collect_funcs e2)
+  | If (e1, e2, e3, _) ->
+    (collect_funcs e1) @ (collect_funcs e2) @ (collect_funcs e3)
+  | Let (x, xs, e1, e2, _, _) ->
+    let fs = (collect_funcs e1) @ (collect_funcs e2) in
+    if xs = [] then fs
+    else x :: fs
+  | Declare (x, xs, e1, _, _) ->
+    let fs = collect_funcs e1 in
+    if xs = [] then fs
+    else x :: fs
+  | Block (es, _) ->
+    let fss = List.map collect_funcs es in
+    List.concat fss
+  | GreaterThan (e1, e2, _, _)
+  | LessThan (e1, e2, _, _) | Equal (e1, e2, _) ->
+    (collect_funcs e1) @ (collect_funcs e2)
+  | App (x, xs, _) ->
+    let fs = collect_funcs x in
+    let fss = List.map collect_funcs xs in
+    fs @ (List.concat fss)
+  | True _ ->
+    []
+  | False _ ->
     []
 
 (* flatten_ops_h : op_t list -> loc_info -> (op_t * loc_info) list *)
@@ -82,16 +125,21 @@ let flatten_ops op : oploc_t list = match op with
 
 let maps = ref []
 
-let func = ref []
+let func_names = ref []
+
+let func_def = ref []
 
 let add_func (k, c) =
   let c' = flatten_ops c in
-  func := (k, c') :: !func
+  func_def := (k, c') :: !func_def
 
 let get_stkp x =
   try
     Some (List.assoc x !maps)
   with Not_found -> None
+
+let exists_func x =
+  if List.mem x !func_names then Some x else None
 
 (* emit_h : ast_t -> op_t *)
 let rec emit_h t = match t with
@@ -100,7 +148,12 @@ let rec emit_h t = match t with
   | Var (v, l) ->
     begin
       match get_stkp v with
-      | None -> failwith ("Unbound value " ^ v)
+      | None ->
+        begin
+          match exists_func v with
+          | None -> failwith ("Unbound value " ^ v)
+          | Some p -> WithInfo ([PUSHP p], l)
+        end
       | Some n -> WithInfo ([MOV n], l)
     end
   | Plus (e1, e2, l) ->
@@ -174,16 +227,21 @@ let rec emit_h t = match t with
   | False (l) ->
     WithInfo ([PUSH 0], l)
   | App (x, xs, l) ->
-    let cs = List.map emit_h xs in
     let c1 = emit_h x in
-    let c2 = CALL (List.length xs) in
-    WithInfo (cs @ c1 :: [c2], l)
+    let cs = List.map emit_h xs in
+    let len = List.length xs in
+    let c2 = CALL len in
+    let c3 = POPE (len + 1) in
+    WithInfo (c1 :: cs @ [c2; c3], l)
 
 (* emit: ast_t -> opcode_t *)
 let emit t =
-  let _ = maps := stack_maps t 0 in
+  let map = stack_maps t 0 in
+  let _ = maps := map in
+  let fnames = collect_funcs t in
+  let _ = func_names := fnames in
   let op = emit_h t in
-  let c1 = !func in
+  let c1 = !func_def in
   let c2 = flatten_ops op in
   let result = { funcs = c1; main = c2 } in
   let () = print_endline (display_opcode result) in

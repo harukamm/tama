@@ -151,7 +151,9 @@ let rec check_boudings t m = match t with
   | Int (n, l) ->
     []
   | Var (v, l) ->
-    [(v, l)]
+    if List.mem v m then
+      [(v, l)]
+    else raise (Not_Supported ("Unboud value", l))
   | Plus (e1, e2, l) ->
     (check_boudings e1 m) @ (check_boudings e2 m)
   | Minus (e1, e2, l) ->
@@ -163,26 +165,14 @@ let rec check_boudings t m = match t with
   | If (e1, e2, e3, l) ->
     (check_boudings e1 m) @ (check_boudings e2 m) @ (check_boudings e3 m)
   | Let (x, xs, e1, e2, is_rec, l) ->
-    let pairs1 = check_boudings e1 m in
-    let pairs2 = check_boudings e2 m in
     let bvs = if is_rec then (x :: xs) else xs in
-    let vs1 = rem_included (m @ bvs) pairs1 in
-    let vs2 = rem_included (x :: m) pairs2 in
-    begin
-      match (vs1, vs2) with
-      | ((v, l) :: vs, _)
-      | ([], ((v, l) :: vs)) -> raise (Not_Supported (access_fvars_error, l))
-      | _ -> vs1 @ vs2
-    end
+    let vs1 = check_boudings e1 (bvs @ m) in
+    let vs2 = check_boudings e2 (x :: m) in
+    vs1 @ vs2
   | Declare (x, xs, e1, is_rec, l) ->
-    let pairs1 = check_boudings e1 m in
     let bvs = if is_rec then (x :: xs) else xs in
-    let vs1 = rem_included (m @ bvs) pairs1 in
-    begin
-      match vs1 with
-      | [] -> []
-      | (v, l) :: vs -> raise (Not_Supported (access_fvars_error, l))
-    end
+    let vs1 = check_boudings e1 (bvs @ m) in
+    vs1
   | Block (es, l) ->
     begin
       let h m' e = match e with

@@ -366,7 +366,7 @@ let x1 = Declare ("x_0", [], Int (5, (t 8, t 9)), false, (t 0, t 9))
 let x2 = Var ("x_0", ((12, 1, 0), (13, 1, 1)))
 let x3 = Block (x1 :: [x2], (t 0, (13, 1, 1)))
 let () = assert (x3 = e)
-
+(*
 let s = "\
 let x = 50 + 100 in\n\
 let f y = x + y in\n\
@@ -378,7 +378,7 @@ let e =
     false
   with Tamavm_pre.Not_Supported (_, info) -> info = ((30, 1, 10), (31, 1, 11))
 let () = assert e
-
+*)
 
 (* VM test *)
 
@@ -387,7 +387,7 @@ let emit s =
   let e = pre_t s in
   Tamavm.emit e
 
-let s = "let f x = x + 50 in f 2"
+let s = "let y = 1 in let f x = x + y in let y = 10 in (f 2) + y"
 let e = emit s
 
 let () = print_endline "<<<<<<<<<<<<<<"
