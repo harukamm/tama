@@ -19,7 +19,6 @@ type op_t = ADD
           | PUSH of int
           | JMP of int
           | JZ of int
-          | JNZ
           | GTEQ
           | GT
           | LSEQ
@@ -373,7 +372,6 @@ let display_op op = match op with
   | PUSH (i) -> "PUSH " ^ (string_of_int i)
   | JMP (i) -> "JMP " ^ (string_of_int i)
   | JZ (i) -> "JZ " ^ (string_of_int i)
-  | JNZ -> "JNZ"
   | GTEQ -> "GTEQ"
   | GT -> "GT"
   | LSEQ -> "LSEQ"

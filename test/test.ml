@@ -458,6 +458,10 @@ in f 0"
   [PUSH 9; PUSH 50; MOV (Offset 2); 
 let fn = [("f_0", f_def)]
 *)
+
+let s = "if 1 < 5 then 10 + 1 else 2 * 3 * 9"
+let e = Tamavm.main s
+
 let () = print_endline "<<<<<<<<<<<<<<"
 let () = print_endline "Success"
 let () = print_endline "<<<<<<<<<<<<<<"

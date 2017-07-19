@@ -253,8 +253,218 @@ let emit t =
   let c1 = !func_def in
   let c2 = flatten_ops op in
   let result = { funcs = c1; main = c2 } in
-(*  let () = print_endline (display_opcode result) in *)
   result
+
+
+(* step execution *)
+
+type elem_t =
+  | Pointer of string
+  | Int of int
+
+type state_t =
+  | Main of int * (oploc_t list)
+  | Func of string * int * (oploc_t list)
+
+let ready = ref false
+
+let x_opcode = ref { funcs = []; main = [] }
+
+let x_bsp : int list ref = ref []
+
+let x_stk : elem_t list ref = ref []
+
+let chain : state_t list ref = ref []
+
+let current_state = ref (Main (-1, []))
+
+let get_bsp () = match !x_bsp with
+  | [] -> failwith "bsp"
+  | x :: _ -> x
+
+let add_bsp x = x_bsp := x :: !x_bsp
+
+let remove_bsp () = match !x_bsp with
+  | [] -> failwith "bsp"
+  | _ :: xs -> x_bsp := xs
+
+let stk_len () = List.length !x_stk
+
+let start_invoke f n =
+  let len = stk_len () in
+  add_bsp (len - n);
+  chain := !current_state :: !chain;
+  let ops = (!x_opcode).funcs in
+  let fop = List.assoc f ops in
+  current_state := Func (f, 0, fop)
+
+let end_invoke () = match !chain with
+  | [] -> failwith "endinvoke"
+  | x :: xs ->
+    remove_bsp ();
+    chain := xs;
+    current_state := x
+
+let pop_stk () = match !x_stk with
+  | [] -> failwith "empty"
+  | x :: xs -> x_stk := xs; x
+
+let getv_stk i =
+  let len = stk_len () in
+  if i < len then List.nth !x_stk (len - i - 1)
+  else failwith "getv_stk"
+
+let push_stk e = x_stk := e :: !x_stk
+let pushi_stk x = push_stk (Int x)
+let pushp_stk s = push_stk (Pointer s)
+let pushb_stk b = if b then pushi_stk 1 else pushi_stk 0
+
+let index_of_label target ops =
+  let rec h ops1 ind = match ops1 with
+    | [] -> failwith "not found"
+    | (LABEL x, _) :: xs when x = target -> ind
+    | _ :: xs -> h xs (ind + 1)
+  in
+  h ops 0
+
+let until_label x = match !current_state with
+  | Main (_, op) ->
+    index_of_label x op
+  | Func (s, _, op) ->
+    index_of_label x op
+
+let get_pc () = match !current_state with
+  | Main (i, _)
+  | Func (_, i, _) -> i
+
+let set_pc n = match !current_state with
+  | Main (i, op) -> current_state := Main (n, op)
+  | Func (s, i, op) -> current_state := Func (s, n, op)
+
+let ahead () = match !current_state with
+  | Main (i, op) -> current_state := Main (i + 1, op)
+  | Func (s, i, op) -> current_state := Func (s, i + 1, op)
+
+let arith = [(ADD, (+)); (SUB, (-)); (MUL, ( * )); (DIV, (/))]
+
+let comp = [(GTEQ, (>=)); (GT, (>)); (LSEQ, (<=)); (LS, (<)); (EQ, (=))]
+
+let step_exe (op : op_t) = match op with
+  | ADD | SUB | MUL | DIV ->
+    let x1 = pop_stk () in
+    let x2 = pop_stk () in
+    let f = List.assoc op arith in
+    begin
+      match (x1, x2) with
+      | (Int i1, Int i2) -> pushi_stk (f i1 i2); ahead ()
+      | _ -> failwith "arith"
+    end
+  | PUSHP x ->
+    begin
+      try
+        let _ = List.assoc x (!x_opcode).funcs in
+        pushp_stk x; ahead ()
+      with Not_found -> failwith "pushp"
+    end
+  | PUSH i ->
+    pushi_stk i; ahead ()
+  | JMP x ->
+    let i = until_label x in
+    set_pc i;
+    ahead ()
+  | JZ x ->
+    let x1 = pop_stk () in
+    begin
+      match x1 with
+      | Int i1 when i1 = 0 -> set_pc (until_label x)
+      | Int i1 when i1 <> 0 -> ahead ()
+      | _ -> failwith "jz"
+    end
+  | GTEQ | GT | LSEQ | LS | EQ ->
+    let x1 = pop_stk () in
+    let x2 = pop_stk () in
+    let f = List.assoc op comp in
+    begin
+      match (x1, x2) with
+      | (Int i1, Int i2) -> pushb_stk (f i1 i2); ahead ()
+      | _ -> failwith "comp"
+    end
+  | CALL n ->
+    let f = getv_stk n in
+    begin
+      match f with
+      | Pointer (p) ->
+        start_invoke p n
+      | _ -> failwith "call"
+    end
+  | RETURN ->
+    ahead ()
+  | LABEL _ ->
+    ahead ()
+  | MOV (Index (i)) ->
+    let v = getv_stk (i) in
+    push_stk v
+  | MOV (Offset (i)) ->
+    let p = get_bsp () in
+    let v = getv_stk (i + p) in
+    push_stk v; ahead ()
+  | POPE (n) ->
+    let x1 = pop_stk () in
+    let rec h i =
+      if i <= 0 then () else let _ = pop_stk () in h (i - 1)
+    in
+    let _ = h n in
+    push_stk x1; ahead ()
+  | WithInfo _ ->
+    failwith "not supported"
+
+(* is_end: unit -> bool *)
+let is_end () =
+  match !current_state with
+  | Main (i, op) ->
+    let oplen = List.length op in
+    i = oplen
+  | Func _ -> false
+
+(* is_end_of_invocation: unit -> bool *)
+let is_end_of_invocation () =
+  match !current_state with
+  | Func (s, i, op) ->
+    let oplen = List.length op in
+    i = oplen
+  | Main _ -> false
+
+(* next_op: unit -> oploc_t *)
+let next_op () = match !current_state with
+  | Main (i, op)
+  | Func (_, i, op) ->
+    List.nth op i
+
+(* step_exe_main: unit -> unit *)
+let step_exe_main () =
+  if not (!ready) then
+    failwith "not ready"
+  else if is_end () then
+   (ready := false;
+    failwith "end")
+  else
+    begin
+     if is_end_of_invocation () then
+       (end_invoke ();
+        print_endline "end invoke";
+        ahead ());       (* finished execute CALL *)
+      let (op, l) = next_op () in
+      print_endline ("step:" ^ (display_op op));
+      step_exe (op)
+    end
+
+(* init: unit -> unit *)
+let init () =
+  x_bsp := [];
+  x_stk := [];
+  chain := [];
+  current_state := (Main (0, (!x_opcode).main));
+  ready := true
 
 (* main: string -> opcode_t *)
 let main s =
@@ -296,22 +506,19 @@ let main s =
        | _ ->
           raise (Failed (Emitting, "I don't know ('x' )/))"))
   in
+  let _ = x_opcode := ops in
+  let _ = init () in
   ops
-
 
 (* result for reason *)
 type result_t =
   | RError of error_typ * string * loc_info option
   | RSuccess of string
 
-(* result_buffer : opcode_t option *)
-let result_buffer = ref None
-
 (* with_string : string -> result_t *)
 let from_reason s =
   try
     let ops = main s in
-    let _ = result_buffer := Some ops in
     RSuccess (display_opcode ops)
   with FailedWith (typ, s, info) ->
         RError (typ, s, Some info)
