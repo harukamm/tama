@@ -17,6 +17,10 @@ type state = {
   on_content: string => unit
 };
 
+type retainedProps = {
+  mark: (int, int)
+};
+
 let queries =
   [(0, ".text_field.container"),
     ...[(1, ".text_field .backdrop"),
@@ -83,7 +87,7 @@ let create_lineno_div st en => {
 let setLineNumber height state => {
   let max = state.max_text_height;
   if (height == max) {
-    ReasonReact.NoUpdate
+    state
   } else if (height < max) {
     let state = {...state, text_height: height, max_text_height: height};
     let (opt_codelines, state) = getReferAndNewState 5 state;
@@ -91,7 +95,7 @@ let setLineNumber height state => {
     | None => ()
     | Some e => Rutil.remove_last_children (max - height) e
     };
-    ReasonReact.Update state
+    state
   } else {
     let state = {...state, text_height: height, max_text_height: height};
     let (opt_codelines, state) = getReferAndNewState 5 state;
@@ -103,8 +107,28 @@ let setLineNumber height state => {
       Rutil.appendHTML e txt
       }
     };
-    ReasonReact.Update state;
+    state;
   }
+};
+
+let setErrorHighlight (p1, p2) {ReasonReact.state: state} => {
+  let e = Rutil.querySelector ".text_field .backs";
+  let content = state.content;
+  let len = String.length content;
+  let s1 = String.sub content 0 p1;
+  let s2 = String.sub content p1 (p2 - p1);
+  let s3 = String.sub content p2 (len - p2);
+  let s = s1 ^ "<mark>" ^ s2 ^ "</mark>" ^ s3;
+  let x = Rutil.replace_br s;
+  Rutil.set_styles e "display:auto;";
+  Rutil.setInnerHTML e x;
+  ReasonReact.NoUpdate
+};
+
+let hideErrorHighlight () => {
+  let e = Rutil.querySelector ".text_field .backs";
+  Rutil.set_styles e "display:none;";
+  ReasonReact.NoUpdate
 };
 
 let applyHightlights text => {
@@ -133,6 +157,7 @@ let handleScroll (e : ReactEventRe.UI.t) self => {
 };
 
 let handleInput (e : ReactEventRe.Form.t) {ReasonReact.state: state} => {
+  let _ = hideErrorHighlight ();
   let value = Rutil.value_of_event e;
   let (opt_highlights, state) = getReferAndNewState 2 state;
   switch opt_highlights {
@@ -146,7 +171,8 @@ let handleInput (e : ReactEventRe.Form.t) {ReasonReact.state: state} => {
   let _ = state.on_content value;
   let state' = {...state, content: value};
   let cnt = Rutil.count_br value;
-  setLineNumber cnt state';
+  let state' = setLineNumber cnt state';
+  ReasonReact.Update state'
 };
 
 let addPasteListener elm => {
@@ -159,9 +185,9 @@ let addPasteListener elm => {
   Rutil.addEventListenterToElement elm "paste" f false;
 };
 
-let component = ReasonReact.statefulComponent "";
+let component = ReasonReact.statefulComponentWithRetainedProps "textfield:";
 
-let make ::onContent _children => {
+let make ::onContent ::mark _children => {
   ...component,
 
   initialState: fun _ => {
@@ -177,6 +203,10 @@ let make ::onContent _children => {
     on_content: onContent
   },
 
+  retainedProps: {
+    mark: mark
+  },
+
   didMount: fun {ReasonReact.state: state, update} => {
     let _ = onContent state.content;
     let content = state.content;
@@ -188,7 +218,17 @@ let make ::onContent _children => {
     | _ => ()
     };
     let cnt = Rutil.count_br content;
-    setLineNumber cnt state
+    let state' = setLineNumber cnt state;
+    ReasonReact.Update state'
+  },
+
+  didUpdate: fun {oldSelf, newSelf} => {
+    let old = oldSelf.retainedProps.mark;
+    let new_ = newSelf.retainedProps.mark;
+    if (old !== new_) {
+      Js.log "backs!!";
+      newSelf.update setErrorHighlight new_;
+    }
   },
 
   render: fun self => {
@@ -198,6 +238,9 @@ let make ::onContent _children => {
         </div>
       </div>
       <div className="txt_container" ref=(self.update (setRefer 0))>
+        <div className="backend">
+          <div className="backs" />
+        </div>
         <div className="backdrop" ref=(self.update (setRefer 1))>
           <div className="highlights" ref=(self.update (setRefer 2))>
           </div>

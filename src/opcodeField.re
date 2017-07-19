@@ -5,7 +5,8 @@
 
 type state = {
   opcodes_text: string,
-  error_message: ReasonReact.reactElement
+  error_message: ReasonReact.reactElement,
+  on_error: (int, int) => unit
 };
 
 type retainedProps = {
@@ -34,18 +35,23 @@ let opcodesSetter value {ReasonReact.state: state} => {
         (<span className="error_typ"> (Rutil.s2e typ') </span>)
         (Rutil.s2e (": " ^ msg))
       </span>;
+    switch opt_info {
+    | None => ()
+    | Some ((p1, _, _), (p2, _, _)) => state.on_error (p1, p2)
+    };
     ReasonReact.Update {...state, error_message: e}
   }
 };
 
 let component = ReasonReact.statefulComponentWithRetainedProps "opcodeField";
 
-let make ::sourceText _children => {
+let make ::sourceText ::onError _children => {
   ...component,
 
   initialState: fun _ => {
     opcodes_text: "",
-    error_message: Rutil.nulle
+    error_message: Rutil.nulle,
+    on_error: onError
   },
 
   retainedProps: {

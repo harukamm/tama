@@ -20,9 +20,8 @@
   -webkit-text-size-adjust: none;
 }
 
-.text_field .backdrop {
+.text_field .backdrop, .backend {
   position: absolute;
-  z-index: 2;
   padding: 1px;
   overflow: scroll;
   overflow-y: scroll;
@@ -31,15 +30,22 @@
   -webkit-transition: transform 1s;
 }
 
-.text_field .highlights {
+.text_field .backdrop {
+  z-index: 2;
+}
+
+.backend {
+  z-index: 0
+}
+
+.text_field .highlights, .backs {
   color: transparent;
   display: block;
 /*  word-wrap: break-word; */
 }
 
-.text_field .highlights mark {
-  background-color: transparent;
-  color: #000;
+.backs mark {
+  color: transparent;
 }
 
 .text_field textarea {
@@ -48,6 +54,7 @@
   z-index: 1;
   margin: 0;
   padding: 0;
+  background-color: transparent;
 /*  border: 2px solid #74637f;
   border-radius: 0; */
   color: #999;
@@ -76,7 +83,7 @@
 }
 
 .text_field, .text_field .txt_container,
-.text_field .backdrop, .text_field textarea, .lines, .op_panel {
+.text_field .backdrop, .text_field textarea, .lines, .backend, .op_panel {
   height: 500px;
 }
 
@@ -85,11 +92,11 @@
   float: left;
 }
 
-.text_field .backdrop, .text_field textarea {
+.text_field .backdrop, .text_field textarea, .backend {
   width: 400px;
 }
 
-.text_field textarea, .text_field .highlights {
+.text_field textarea, .text_field .highlights, .backs {
   font-family: 'Verdana', Georgia, Serif;
   font-size: 12pt;
   font-weight: 100;
