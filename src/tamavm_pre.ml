@@ -146,32 +146,27 @@ let only_included l =
   List.filter (fun (x, _) -> List.mem x l)
 
 let rec check_boudings t m = match t with
-  | Int (n, l) ->
+  | Int _ ->
     []
   | Var (v, l) ->
     if List.mem v m then
       [(v, l)]
     else raise (Unbound_Variable (l))
-  | Plus (e1, e2, l) ->
+  | Plus (e1, e2, _) | Minus (e1, e2, _)
+  | Times (e1, e2, _) | Divide (e1, e2, _) ->
     (check_boudings e1 m) @ (check_boudings e2 m)
-  | Minus (e1, e2, l) ->
-    (check_boudings e1 m) @ (check_boudings e2 m)
-  | Times (e1, e2, l) ->
-    (check_boudings e1 m) @ (check_boudings e2 m)
-  | Divide (e1, e2, l) ->
-    (check_boudings e1 m) @ (check_boudings e2 m)
-  | If (e1, e2, e3, l) ->
+  | If (e1, e2, e3, _) ->
     (check_boudings e1 m) @ (check_boudings e2 m) @ (check_boudings e3 m)
-  | Let (x, xs, e1, e2, is_rec, l) ->
+  | Let (x, xs, e1, e2, is_rec, _) ->
     let bvs = if is_rec then (x :: xs) else xs in
     let vs1 = check_boudings e1 (bvs @ m) in
     let vs2 = check_boudings e2 (x :: m) in
     vs1 @ vs2
-  | Declare (x, xs, e1, is_rec, l) ->
+  | Declare (x, xs, e1, is_rec, _) ->
     let bvs = if is_rec then (x :: xs) else xs in
     let vs1 = check_boudings e1 (bvs @ m) in
     vs1
-  | Block (es, l) ->
+  | Block (es, _) ->
     begin
       let h m' e = match e with
         | Let (x, _, _, _, _, _)
@@ -182,15 +177,15 @@ let rec check_boudings t m = match t with
       let vss = List.map (fun e -> check_boudings e m1) es in
       List.concat vss
     end
-  | GreaterThan (e1, e2, _, l) | LessThan (e1, e2, _, l)
-  | Equal (e1, e2, l) ->
+  | GreaterThan (e1, e2, _, _) | LessThan (e1, e2, _, _)
+  | Equal (e1, e2, _) ->
     (check_boudings e1 m) @ (check_boudings e2 m)
-  | App (x, xs, l) ->
+  | App (x, xs, _) ->
     let vss = List.map (fun e -> check_boudings e m) (x :: xs) in
     List.concat vss
-  | True (l) ->
+  | True _ ->
     []
-  | False (l) ->
+  | False _ ->
     []
 
 type ast_sym_t =
@@ -221,35 +216,35 @@ let occur_other_sym syms e =
   let slst' = rem_included syms slst in
   match slst' with
   | [] -> None
-  | x :: xs -> Some (x)
+  | x :: _ -> Some (x)
 
 let occur_sym syms e =
   let slst = heads e in
   let slst' = only_included syms slst in
   match slst' with
   | [] -> None
-  | x :: xs -> Some (x)
+  | x :: _ -> Some (x)
 
 let rec check t = match t with
   | Int _ ->
     ()
   | Var _ ->
     ()
-  | Plus (e1, e2, l) | Minus (e1, e2, l)
-  | Times (e1, e2, l) | Divide (e1, e2, l) ->
+  | Plus (e1, e2, _) | Minus (e1, e2, _)
+  | Times (e1, e2, _) | Divide (e1, e2, _) ->
     let _ = check e1 in
     let _ = check e2 in
     ()
-  | If (e1, e2, e3, l) ->
+  | If (e1, e2, e3, _) ->
     let _ = check e1 in
     let _ = check e2 in
     let _ = check e3 in
     ()
-  | Let (x, xs, e1, e2, is_rec, l) ->
+  | Let (_, _, e1, e2, _, _) ->
     let _ = check e1 in
     let _ = check e2 in
     ()
-  | Declare (x, xs, e1, is_rec, l) ->
+  | Declare (_, _, e1, _, _) ->
     let _ = check e1 in
     ()
   | Block (es, _) ->
@@ -276,9 +271,9 @@ let rec check t = match t with
       in
       List.iter h ex
     end
-  | True (l) ->
+  | True _ ->
     ()
-  | False (l) ->
+  | False _ ->
     ()
 
 let main t =

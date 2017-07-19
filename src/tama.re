@@ -32,8 +32,10 @@ let make ::id _children => {
   render: fun {state, update} => {
     <div id=id>
       <TextField onContent=(update syncContent)/>
-      <OpcodeField sourceText=(state.source_to_compile)/>
-      <button onClick=(update compileContent)> (Rutil.s2e "compile") </button>
+      <div className="op_panel">
+        <button onClick=(update compileContent)> (Rutil.s2e "compile") </button>
+        <OpcodeField sourceText=(state.source_to_compile)/>
+      </div>
     </div>
   }
 };

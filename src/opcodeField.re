@@ -35,7 +35,6 @@ let make ::sourceText _children => {
     let old_ = oldSelf.retainedProps.sourceText;
     let new_ = newSelf.retainedProps.sourceText;
     if(old_ !== new_) {
-      let state = newSelf.state;
       newSelf.update opcodesSetter new_;
       Js.log ("new!: " ^ new_);
     }
