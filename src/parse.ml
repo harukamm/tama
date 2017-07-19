@@ -145,20 +145,16 @@ let and_ fs =
        h fs
      with e -> set ind; raise e
 
-let merge_info info =
-  let _ = if info = [] then failwith "Cannot merge invalid location-info" in
-  let len = List.length info in
-  let (loc1, _) = List.hd info in
-  let (_, loc2) = List.nth info (len - 1) in
+let merge_info (i1, i2) =
+  let (loc1, _) = i1 in
+  let (_, loc2) = i2 in
   (loc1, loc2)
 
-let get_and_merge_tkn_info ts =
-  let info_lst = List.map get_tkn_info ts in
-  merge_info info_lst
+let get_and_merge_tkn_info (t1, t2) =
+  merge_info (get_tkn_info t1, get_tkn_info t2)
 
-let get_and_merge_ast_info ts =
-  let info_lst = List.map get_ast_info ts in
-  merge_info info_lst
+let get_and_merge_ast_info (t1, t2) =
+  merge_info (get_ast_info t1, get_ast_info t2)
 
 (*
  * s := LET VAR+ EQUAL s [IN s]
@@ -196,12 +192,12 @@ let num () = match expect_tkn SINT with
   | _ -> raise SNH
 
 let negative_num () = match expect_tkns [SMINUS; SINT] with
-  | [MINUS (l1); INT (n, l2)] -> Int (-n, merge_info [l1; l2])
+  | [MINUS (l1); INT (n, l2)] -> Int (-n, merge_info (l1, l2))
   | _ -> raise SNH
 
 let negative_num_2 () = match expect_tkns [SLPAREN; SMINUS; SINT; SRPAREN] with
   | [LPAREN (l1); MINUS _; INT (n, _); RPAREN (l2)] ->
-    Int (-n, merge_info [l1; l2])
+    Int (-n, merge_info (l1, l2))
   | _ -> raise SNH
 
 let var () = match expect_tkn SVAR with
@@ -227,7 +223,7 @@ let rec tops () =
     let _ = expect_tkn SEQUAL in
     let e1 = ifs () in
     let (i1, i2) = (get_tkn_info hd, get_ast_info e1) in
-    Declare (name, xs, e1, is_rec, merge_info [i1; i2])
+    Declare (name, xs, e1, is_rec, merge_info (i1, i2))
   in
   or_ "tops" [ifs; f_1]
 
@@ -241,7 +237,7 @@ and ifs () =
     let e3 = ifs () in
     let i1 = get_tkn_info tif in
     let i2 = get_ast_info e3 in
-    If (e1, e2, e3, merge_info [i1; i2])
+    If (e1, e2, e3, merge_info (i1, i2))
   in
   let f_2 () =
     let hd = expect_tkn SLET in
@@ -254,7 +250,7 @@ and ifs () =
     let _ = accept_tkn SIN in
     let e2 = ifs () in
     let (i1, i2) = (get_tkn_info hd, get_ast_info e2) in
-    Let (name, xs, e1, e2, is_rec, merge_info [i1; i2])
+    Let (name, xs, e1, e2, is_rec, merge_info (i1, i2))
   in
   or_ "ifs" [f_1; f_2; expr]
 
@@ -266,8 +262,8 @@ and expr () =
                      let t = term () in (op, t))
   in
     List.fold_left (fun tr (op, t) ->
-                     if tkn_eq SPLUS op then Plus (tr, t, get_and_merge_ast_info [tr; t])
-                     else Minus (tr, t, get_and_merge_ast_info [tr; t])) t1 ts
+                     if tkn_eq SPLUS op then Plus (tr, t, get_and_merge_ast_info (tr, t))
+                     else Minus (tr, t, get_and_merge_ast_info (tr, t))) t1 ts
   in
   or_ "expr" [f_1; (fun () -> t1)]
 
@@ -279,8 +275,8 @@ and term () =
                      let f = factor () in (op, f))
   in
     List.fold_left (fun tr (op, t) ->
-                     if tkn_eq STIMES op then Times (tr, t, get_and_merge_ast_info [tr; t])
-                     else Divide (tr, t, get_and_merge_ast_info [tr; t])) f1 fs
+                     if tkn_eq STIMES op then Times (tr, t, get_and_merge_ast_info (tr, t))
+                     else Divide (tr, t, get_and_merge_ast_info (tr, t))) f1 fs
   in
   or_ "term" [f_1; (fun () -> f1)]
 
@@ -289,7 +285,7 @@ and factor () =
     let lprn = expect_tkn SLPAREN in
     let e = ifs () in
     let rprn = expect_tkn SRPAREN in
-    let info' = get_and_merge_tkn_info [lprn; rprn] in
+    let info' = get_and_merge_tkn_info (lprn, rprn) in
     set_ast_info e info'
   in
   let f_1 () =
@@ -300,7 +296,7 @@ and factor () =
     let lst = [SGREATER_THAN_EQ; SGREATER_THAN; SLESS_THAN_EQ; SLESS_THAN; SEQUAL] in
     let tkn = expect_tkn_or lst in
     let e2 = f_1 () in
-    let info = get_and_merge_ast_info [e1; e2] in
+    let info = get_and_merge_ast_info (e1, e2) in
     match tkn with
     | GREATER_THAN_EQ (l) -> GreaterThan (e1, e2, true, info)
     | GREATER_THAN (l) -> GreaterThan (e1, e2, false, info)
@@ -312,7 +308,7 @@ and factor () =
   let f_3 () =
     let es = many1 (fun () -> or_ "fac_f_3" [value_2; f_1_1]) in
     let last = List.hd (List.rev es) in
-    let info = get_and_merge_ast_info [e1; last] in
+    let info = get_and_merge_ast_info (e1, last) in
     App (e1, es, info)
   in
   or_ "factor" [f_2; f_3; (fun () -> e1)]
@@ -339,5 +335,5 @@ let main ts =
       x
     | x :: xs ->
       let x' = List.hd (List.tl es) in
-      Block (es, get_and_merge_ast_info [x; x'])
+      Block (es, get_and_merge_ast_info (x, x'))
   with e -> raise e
