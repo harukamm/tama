@@ -64,7 +64,7 @@ let e =
   try
     let _ = Tokenize.one_token ((0, 0, 0), "(*") in
     false
-  with Types.Comment_Not_Terminated (info) -> ((0, 0, 0), (2, 0, 2)) = info
+  with Comment_Not_Terminated (info) -> ((0, 0, 0), (2, 0, 2)) = info
 
 let () = assert e
 
@@ -146,7 +146,7 @@ let b =
   try
     let _ = Parse.expect is_plus in
     false
-  with Parse.Out_of_Index -> true
+  with Out_of_Index -> true
 let () = assert b
 
 let () = init_ptr ()
@@ -281,14 +281,14 @@ let e =
   try
     let _ = Parse.main ts in
     false
-  with Parse.Has_No_Token -> true
+  with Has_No_Token -> true
 let () = assert e
 
 let e =
   try
     let _ = Parse.main [] in
     false
-  with Parse.Has_No_Token -> true
+  with Has_No_Token -> true
 let () = assert e
 
 let s = "let x=50;;\n(*end*)(*end*)(*end*)\n\n"
@@ -355,7 +355,7 @@ let e =
   try
     let _ = pre_t s in
     true
-  with Tamavm_pre.Not_Supported (_, info) -> info = ((42, 1, 14), (43, 1, 15))
+  with Not_Supported (_, info) -> info = ((42, 1, 14), (43, 1, 15))
 let () = assert e
 
 let s = "\

@@ -54,7 +54,7 @@ let rec alpha t m = match t with
   | Var (v, l) ->
     begin
       match (get v m) with
-      | None -> failwith ("Unbound value " ^ v)
+      | None -> raise (Unbound_Variable (l))
       | Some v' -> Var (v', l)
     end
   | Plus (e1, e2, l) ->
@@ -135,8 +135,6 @@ let rec declares t = match t with
   | False (l) ->
 *)
 
-exception Not_Supported of (string * loc_info)
-
 let access_fvars_error = "not supported accessing free variables"
 
 let application_error = "not supported expression"
@@ -153,7 +151,7 @@ let rec check_boudings t m = match t with
   | Var (v, l) ->
     if List.mem v m then
       [(v, l)]
-    else raise (Not_Supported ("Unboud value", l))
+    else raise (Unbound_Variable (l))
   | Plus (e1, e2, l) ->
     (check_boudings e1 m) @ (check_boudings e2 m)
   | Minus (e1, e2, l) ->

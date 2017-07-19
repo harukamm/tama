@@ -155,7 +155,7 @@ let rec emit_h t = match t with
       | None ->
         begin
           match exists_func v with
-          | None -> failwith ("Unbound value " ^ v)
+          | None -> raise (Unbound_Variable (l))
           | Some p -> WithInfo ([PUSHP p], l)
         end
       | Some n -> WithInfo ([MOV n], l)

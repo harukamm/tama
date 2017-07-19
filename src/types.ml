@@ -57,10 +57,6 @@ type ast_t =
   | Equal of ast_t * ast_t * loc_info
   | App of ast_t * ast_t list * loc_info
 
-exception Tokenize_Error of (string * loc_info)
-
-exception Comment_Not_Terminated of loc_info
-
 type token_t =
   | INT of int * loc_info
   | VAR of string * loc_info
@@ -407,3 +403,35 @@ let display_opcode { funcs = c1; main = c2 } =
   let main' = display_aplocs_h "  " c2 in
   func' ^ "\n" ^ main'
 
+
+(* tokenizing exceptions *)
+
+exception Tokenize_Error of (string * loc_info)
+
+exception Comment_Not_Terminated of loc_info
+
+
+(* parsing exceptions *)
+
+exception SNH (* should not happen *)
+
+exception Out_of_Index
+
+exception Unexpected of token_t
+
+exception Not_Found_Match of string
+
+exception Has_No_Token
+
+exception Perhaps_Missing_DSC of loc_info
+
+
+
+(* TamaVM-pre exceptions *)
+
+exception Not_Supported of (string * loc_info)
+
+exception Unbound_Variable of loc_info
+
+
+(* TamaVM exceptions *)

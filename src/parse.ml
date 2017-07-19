@@ -320,7 +320,17 @@ let rec loop () =
   if is_end () then [e]
   else
     if cs then e :: loop ()
-    else failwith "Parsing error. Are you missing `;;`?"
+    else
+      let ind = nearest_index () in
+      begin
+        match ind with
+        | None ->
+          raise SNH
+        | Some i ->
+          let t = get_with i in
+          let l = get_tkn_info t in
+          raise (Perhaps_Missing_DSC (l))
+      end
 
 (* main : token_t list -> ast_t *)
 let main ts =
