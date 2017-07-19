@@ -13,45 +13,45 @@ let label () =
 
 (* stack_maps : ast_t -> bool -> int -> (string * stack_pointer) list *)
 let rec stack_maps inside t n = match t with
-  | Int (n, l) ->
+  | Int _ ->
     []
-  | Var (v, l) ->
+  | Var _ ->
     []
-  | Plus (e1, e2, l) | Minus (e1, e2, l)
-  | Times (e1, e2, l) | Divide (e1, e2, l) ->
+  | Plus (e1, e2, _) | Minus (e1, e2, _)
+  | Times (e1, e2, _) | Divide (e1, e2, _) ->
     let m1 = stack_maps inside e1 n in
     let m2 = stack_maps inside e2 (n + 1) in
     m1 @ m2
-  | If (e1, e2, e3, l) ->
+  | If (e1, e2, e3, _) ->
     let m1 = stack_maps inside e1 n in
     let m2 = stack_maps inside e2 n in
     let m3 = stack_maps inside e3 n in
     m1 @ m2 @ m3
-  | Let (x, [], e1, e2, _, l) ->
+  | Let (x, [], e1, e2, _, _) ->
     let m' = (x, if inside then Offset n else Index n) in
     let m1 = stack_maps inside e1 n in
     let m2 = stack_maps inside e2 (n + 1) in
     m' :: m1 @ m2
-  | Declare (x, [], e1, _, l) ->
+  | Declare (x, [], e1, _, _) ->
     let m' = (x , if inside then Offset n else Index n) in
     let m1 = stack_maps inside e1 n in
     m' :: m1
-  | Let (x, xs, e1, e2, is_rec, l) ->
+  | Let (_, xs, e1, e2, _, _) ->
     let (m', n2) =
       List.fold_left (fun (l, i) a -> ((a, Offset i) :: l), i + 1) ([], 0) xs in
     let m1 = stack_maps true e1 n2 in
     let m2 = stack_maps inside e2 n in
     m' @ m1 @ m2
-  | Declare (x, xs, e1, is_rec, l) ->
+  | Declare (_, xs, e1, _, _) ->
     let (m', _) =
       List.fold_left (fun (l, i) a -> ((a, Offset i) :: l, i + 1)) ([], 0) xs in
     let m1 = stack_maps true e1 n in
     m' @ m1
-  | Block (es, l) ->
+  | Block (es, _) ->
     begin
       let h (m, n1) e = match e with
-        | Let (x, [], _, _, _, _)
-        | Declare (x, [], _, _, _) ->
+        | Let (_, [], _, _, _, _)
+        | Declare (_, [], _, _, _) ->
           let m1 = stack_maps inside e n1 in
           (m1 @ m, n1 + 1)
         | _ ->
@@ -67,13 +67,13 @@ let rec stack_maps inside t n = match t with
     let m1 = stack_maps inside e1 n in
     let m2 = stack_maps inside e2 (n + 1) in
     m1 @ m2
-  | App (x, xs, l) ->
+  | App (x, xs, _) ->
     let x' = stack_maps inside x n in
     let xs' = List.map (fun e -> stack_maps inside e n) xs in
     x' @ (List.concat xs')
-  | True (l) ->
+  | True _ ->
     []
-  | False (l) ->
+  | False _ ->
     []
 
 (* collect_funcs: ast_t -> string list *)
@@ -192,20 +192,20 @@ let rec emit_h t = match t with
     let c3 = emit_h e3 in
     let lst = c1 :: j1 :: c2 :: j2 :: lb1 :: [c3; lb2] in
     WithInfo (lst, l)
-  | Let (x, [], e1, e2, is_rec, l) ->
+  | Let (_, [], e1, e2, _, l) ->
     let c1 = emit_h e1 in
     let c2 = emit_h e2 in
     WithInfo (c1 :: [c2], l)
-  | Declare (x, [], e1, is_rec, l) ->
+  | Declare (_, [], e1, _, l) ->
     let c1 = emit_h e1 in
     WithInfo ([c1], l)
-  | Let (x, xs, e1, e2, is_rec, l) ->
+  | Let (x, _::_, e1, e2, _, l) ->
     let c1 = emit_h e1 in
     let info = get_ast_info e1 in
     let _ = add_func (x, WithInfo ([c1], info)) in
     let c2 = emit_h e2 in
     WithInfo ([c2], l)
-  | Declare (x, xs, e1, is_rec, l) ->
+  | Declare (x, _::_, e1, _, l) ->
     let c1 = emit_h e1 in
     let () = add_func (x, WithInfo ([c1], l)) in
     WithInfo ([PUSH 0], l)
@@ -256,5 +256,3 @@ let emit t =
   let () = print_endline (display_opcode result) in
   result
 
-let main t =
-  ()
