@@ -401,8 +401,7 @@ let display_opcode { funcs = c1; main = c2 } =
   in
   let func' = List.fold_left h "" c1 in
   let main' = display_aplocs_h "  " c2 in
-  func' ^ "\n" ^ main'
-
+  func' ^ "\n" ^ "main:\n" ^ main'
 
 (* tokenizing exceptions *)
 
@@ -423,9 +422,6 @@ exception Not_Found_Match of string
 
 exception Has_No_Token
 
-exception Perhaps_Missing_DSC of loc_info
-
-
 
 (* TamaVM-pre exceptions *)
 
@@ -435,3 +431,11 @@ exception Unbound_Variable of loc_info
 
 
 (* TamaVM exceptions *)
+
+type error_typ =
+  | Tokenizing | Parsing | Prechecking | Emitting
+
+exception FailedWith of (error_typ * string * loc_info)
+
+exception Failed of (error_typ * string)
+

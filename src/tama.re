@@ -36,7 +36,7 @@ let make ::id _children => {
         <TextField onContent=(update syncContent)/>
         <div className="op_panel">
           <button className="cmp_btn" onClick=(update compileContent)>
-            (Rutil.s2e "compile")
+            (Rutil.s2e {js|こんぱいる|js})
           </button>
           <OpcodeField sourceText=(state.source_to_compile)/>
         </div>

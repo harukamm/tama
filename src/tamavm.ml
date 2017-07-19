@@ -253,6 +253,68 @@ let emit t =
   let c1 = !func_def in
   let c2 = flatten_ops op in
   let result = { funcs = c1; main = c2 } in
-  let () = print_endline (display_opcode result) in
+(*  let () = print_endline (display_opcode result) in *)
   result
+
+(* main: string -> opcode_t *)
+let main s =
+  let ts =
+    try
+      Tokenize.main s
+    with Tokenize_Error (s, info) ->
+          raise (FailedWith (Tokenizing, "Invalid token: `" ^ s ^ "'", info))
+       | Comment_Not_Terminated info ->
+          raise (FailedWith (Tokenizing, "Comment not terminated", info))
+       | _ ->
+          raise (Failed (Tokenizing, "Please report ('-' +)"))
+  in
+  let ast =
+    try
+      Parse.main ts
+    with Has_No_Token ->
+          raise (Failed (Parsing, "Empty sorce text"))
+       | Unexpected (t) ->
+          raise (FailedWith (Parsing, "Unexpected token", get_tkn_info t))
+       | _ ->
+          raise (Failed (Parsing, "I don't know ( '-')"))
+  in
+  let ast' =
+    try
+      Tamavm_pre.main ast
+    with Unbound_Variable (info) ->
+          raise (FailedWith (Prechecking, "Unbound variable", info))
+       | Not_Supported (msg, info) ->
+          raise (FailedWith (Prechecking, msg, info))
+       | _ ->
+          raise (Failed (Prechecking, "I don't know (;; '-') Please report"))
+  in
+  let ops =
+    try
+      emit ast'
+    with Unbound_Variable (info) ->
+          raise (FailedWith (Emitting, "This is a bug! (> o <);;", info))
+       | _ ->
+          raise (Failed (Emitting, "I don't know ('x' )/))"))
+  in
+  ops
+
+
+(* result for reason *)
+type result_t =
+  | RError of error_typ * string * loc_info option
+  | RSuccess of string
+
+(* result_buffer : opcode_t option *)
+let result_buffer = ref None
+
+(* with_string : string -> result_t *)
+let from_reason s =
+  try
+    let ops = main s in
+    let _ = result_buffer := Some ops in
+    RSuccess (display_opcode ops)
+  with FailedWith (typ, s, info) ->
+        RError (typ, s, Some info)
+     | Failed (typ, s) ->
+        RError (typ, s, None)
 

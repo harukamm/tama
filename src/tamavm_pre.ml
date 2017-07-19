@@ -135,9 +135,9 @@ let rec declares t = match t with
   | False (l) ->
 *)
 
-let access_fvars_error = "not supported accessing free variables"
+let access_fvars_error = "Not supported accessing free variables"
 
-let application_error = "not supported expression"
+let application_error = "Not supported expression"
 
 let rem_included l =
   List.filter (fun (x, _) -> not (List.mem x l))

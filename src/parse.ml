@@ -329,7 +329,7 @@ let rec loop () =
         | Some i ->
           let t = get_with i in
           let l = get_tkn_info t in
-          raise (Perhaps_Missing_DSC (l))
+          raise (Unexpected (t))
       end
 
 (* main : token_t list -> ast_t *)

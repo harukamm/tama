@@ -122,6 +122,18 @@
   border: 1px solid #74637f;
   height: 70%;
   margin-top: 5px;
+  overflow: auto;
+  white-space: pre;
+}
+
+.opcode_field .error_typ {
+  color: red;
+  font-weight: bold;
+}
+
+.opcode_field .success {
+  color: #00ff00;
+  font-weight: bold;
 }
 
 /*
