@@ -7,12 +7,17 @@ type loc_info =
     * int        (* end of lineno   *)
     * int)       (* end of colno    *)
 
+type stack_pointer =
+  | Index of int
+  | Offset of int
+
 type op_t = ADD
           | SUB
           | MUL
           | DIV
           | PUSHP of string
           | PUSH of int
+          | JMP of int
           | JZ of int
           | JNZ
           | GTEQ
@@ -23,7 +28,7 @@ type op_t = ADD
           | CALL of int
           | RETURN
           | LABEL of int
-          | MOV of int
+          | MOV of stack_pointer
           | POPE of int
           | WithInfo of op_t list * loc_info
 
@@ -370,6 +375,7 @@ let display_op op = match op with
   | DIV -> "DIV"
   | PUSHP (f) -> "PUSHP " ^ f
   | PUSH (i) -> "PUSH " ^ (string_of_int i)
+  | JMP (i) -> "JMP " ^ (string_of_int i)
   | JZ (i) -> "JZ " ^ (string_of_int i)
   | JNZ -> "JNZ"
   | GTEQ -> "GTEQ"
@@ -380,7 +386,8 @@ let display_op op = match op with
   | CALL (i) -> "CALL " ^ (string_of_int i)
   | RETURN -> "RETURN"
   | LABEL (i) -> "LABEL " ^ (string_of_int i)
-  | MOV (i) -> "MOV " ^ (string_of_int i)
+  | MOV (Index (i)) -> "MOV " ^ (string_of_int i)
+  | MOV (Offset (i)) -> "MOV " ^ (string_of_int i) ^ "(BSP)"
   | POPE (i) -> "POPE " ^ (string_of_int i)
   | WithInfo _ -> failwith "not supported"
 

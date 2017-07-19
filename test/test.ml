@@ -387,9 +387,77 @@ let emit s =
   let e = pre_t s in
   Tamavm.emit e
 
+let get_ops (x : oploc_t list) =
+  List.map (fun (op, _) -> op) x
+
+let opcode_eq o1 fn m = match o1 with
+  | { funcs = c1; main = c2 } ->
+    let h (name, ops) =
+      try
+        let x = List.assoc name fn in
+        let ops' = get_ops ops in
+        x = ops'
+      with Not_found -> false
+    in
+    let c2' = get_ops c2 in
+    List.for_all h c1 && m = c2'
+
 let s = "let y = 1 in let f x = x + y in let y = 10 in (f 2) + y"
 let e = emit s
+let f_def = [MOV (Offset 0); MOV (Index 0); ADD]
+let fn = [("f_1", f_def)]
+let m = [PUSH 1; PUSH 10; PUSHP "f_1"; PUSH 2; CALL 1; POPE 2; MOV (Index 1); ADD]
+let () = assert (opcode_eq e fn m)
 
+let s = "if 1 < 5 then 10 + 1 else 2 * 3 * 9"
+let e = emit s
+let fn = []
+let m =
+  [PUSH 1; PUSH 5; LS; JZ 0; PUSH 10; PUSH 1; ADD; JMP 1;
+   LABEL 0; PUSH 2; PUSH 3; MUL; PUSH 9; MUL;
+   LABEL 1]
+let () = assert (opcode_eq e fn m)
+
+let s = "
+let y = 50;;
+let x =
+  let a = 5 + 1 in
+  let x = y / 100 in
+  a + 1000;;
+x + 10"
+let e = emit s
+let fn = []
+let m =
+  [PUSH 50; PUSH 5; PUSH 1; ADD; MOV (Index 0); PUSH 100; DIV;
+   MOV (Index 1); PUSH 1000; ADD; MOV (Index 1); PUSH 10; ADD]
+let () = assert (opcode_eq e fn m)
+
+let s = "
+let rec f x1 x2 =
+  let x = 50 in
+  if x1 < x then x2 else (f (x1 - 1) (x2 + 1))
+in
+f 5 0"
+let e = emit s
+let f_def =
+  [PUSH 50; MOV (Offset 0); MOV (Offset 2); LS; JZ 0; MOV (Offset 1); JMP 1;
+   LABEL 0; PUSHP "f_0"; MOV (Offset 0); PUSH 1; SUB;
+   MOV (Offset 1); PUSH 1; ADD; CALL 2; POPE 3;
+   LABEL 1]
+let fn = [("f_0", f_def)]
+let m =
+  [PUSHP "f_0"; PUSH 5; PUSH 0; CALL 2; POPE 3]
+let () = assert (opcode_eq e fn m)
+
+let s = "
+let f x1 =
+  let x2 = 9 in
+  if (let x = 50 in x < 50) then x1 else (let x = 10 in x < x2)
+in f 0"
+(* let f_def =
+  [PUSH 9; PUSH 50; MOV (Offset 2); 
+let fn = [("f_0", f_def)]
+*)
 let () = print_endline "<<<<<<<<<<<<<<"
 let () = print_endline "Success"
 let () = print_endline "<<<<<<<<<<<<<<"
