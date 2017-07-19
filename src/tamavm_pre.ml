@@ -70,19 +70,19 @@ let rec alpha t m = match t with
   | Let (x, xs, e1, e2, is_rec, l) ->
     let x' = gensym x in
     let xs' = List.map gensym xs in
-    let kvs = Util.zip (x :: xs) (x' :: xs') in
-    let m' = if is_rec then add (x, x') m else m in
-    let m1 = List.fold_left (fun m kv -> add kv m) m' kvs in
+    let kvs = Util.zip xs xs' in
+    let m1 = List.fold_left (fun m kv -> add kv m) m kvs in
+    let m1' = if is_rec then add (x, x') m1 else m1 in
     let m2 = add (x, x') m in
-    Let (x', xs', alpha e1 m1, alpha e2 m2, is_rec, l)
+    Let (x', xs', alpha e1 m1', alpha e2 m2, is_rec, l)
   | Declare (x, xs, e1, is_rec, l) ->
     let x' = gensym x in
     let _ = add_global (x, x') in
     let xs' = List.map gensym xs in
-    let kvs = Util.zip (x :: xs) (x' :: xs') in
-    let m' = if is_rec then add (x, x') m else m in
-    let m1 = List.fold_left (fun m kv -> add kv m) m' kvs in
-    Declare (x', xs', alpha e1 m1, is_rec, l)
+    let kvs = Util.zip xs xs' in
+    let m1 = List.fold_left (fun m kv -> add kv m) m kvs in
+    let m1' = if is_rec then add (x, x') m1 else m1 in
+    Declare (x', xs', alpha e1 m1', is_rec, l)
   | Block (es, l) ->
     begin
       let h (m, ts) e =

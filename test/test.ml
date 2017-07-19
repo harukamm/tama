@@ -342,7 +342,7 @@ let rec x = x in (* x -> x_4 *)
 x"
 let e = alpha_t s
 let x1 = Let ("x_4", [], Var ("x_4", l), Var ("x_4", l), true, l)
-let x2 = Let ("x_1", ["x1_2"; "x2_3"], Times (Times (Var ("x_1", l), Var ("x1_2", l), l), Var ("x2_3", l), l), x1, false, l)
+let x2 = Let ("x_1", ["x1_2"; "x2_3"], Times (Times (Var ("x_0", l), Var ("x1_2", l), l), Var ("x2_3", l), l), x1, false, l)
 let x3 = Let ("x_0", [], Int (5, l), x2, false, l)
 let () = assert (ast_eq x3 e)
 
