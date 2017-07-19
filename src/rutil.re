@@ -88,6 +88,23 @@ let execCommand name showDefault value =>
 
 /* Dom.element APIs */
 
+type class_lst_;
+
+external getClassList_ : Dom.element => class_lst_ =
+  "classList" [@@bs.get];
+
+external addClass_ : class_lst_ => string => unit =
+  "add" [@@bs.send];
+
+external removeClass_ : class_lst_ => string => unit =
+  "remove" [@@bs.send];
+
+let addClass e c =>
+  addClass_ (getClassList_ e) c;
+
+let removeClass e c =>
+  removeClass_ (getClassList_ e) c;
+
 external querySelector : string => Dom.element =
   "" [@@bs.val] [@@bs.scope "document"];
 

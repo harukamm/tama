@@ -272,7 +272,7 @@ let main s =
     try
       Parse.main ts
     with Has_No_Token ->
-          raise (Failed (Parsing, "Empty sorce text"))
+          raise (Failed (Parsing, "Empty token"))
        | Unexpected (t) ->
           raise (FailedWith (Parsing, "Unexpected token", get_tkn_info t))
        | _ ->

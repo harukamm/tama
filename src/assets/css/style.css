@@ -2,6 +2,10 @@
  * text field
  */
 
+.backs.display_none {
+  display: none;
+}
+
 .title {
   background-image: url("../img/title.png");
   background-repeat: no-repeat;
@@ -45,6 +49,7 @@
 }
 
 .backs mark {
+  background-color: yellow;
   color: transparent;
 }
 
