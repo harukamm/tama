@@ -4,7 +4,8 @@
  */
 
 type state = {
-  opcodes_text: string 
+  opcodes_text: string,
+  error_message: string
 };
 
 type retainedProps = {
@@ -24,7 +25,8 @@ let make ::sourceText _children => {
   ...component,
 
   initialState: fun _ => {
-    opcodes_text: ""
+    opcodes_text: "",
+    error_message: ""
   },
 
   retainedProps: {
@@ -42,8 +44,11 @@ let make ::sourceText _children => {
 
   render: fun self => {
     let state : state = self.state;
-    <div className="opcodeField">
-      <div className="content">
+    <div className="opcode_field">
+      <div className="message">
+        (Rutil.s2e state.error_message)
+      </div>
+      <div className="out">
         (Rutil.s2e state.opcodes_text)
       </div>
     </div>

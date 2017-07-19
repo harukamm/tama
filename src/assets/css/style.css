@@ -2,10 +2,19 @@
  * text field
  */
 
+.title {
+  background-image: url("../img/title.png");
+  background-repeat: no-repeat;
+  background-size: contain;
+  height: 50px;
+  width: 200px;
+  margin: 20px;
+}
+
 .text_field .txt_container {
   display: block;
   float: left;
-  width: 450px;
+  width: 400px;
   margin: 0;
   transform: translateZ(0);
   -webkit-text-size-adjust: none;
@@ -66,12 +75,14 @@
   box-sizing: border-box;
 }
 
-.text_field, .text_field .txt_container, .text_field .backdrop, .text_field textarea, .lines {
-  height: 400px;
+.text_field, .text_field .txt_container,
+.text_field .backdrop, .text_field textarea, .lines, .op_panel {
+  height: 500px;
 }
 
 .text_field {
-  width: 500px;
+  display: inline-flex;
+  float: left;
 }
 
 .text_field .backdrop, .text_field textarea {
@@ -84,6 +95,33 @@
   font-weight: 100;
   overflow: auto;
   white-space: pre;
+}
+
+.cmp_btn {
+  height: 30px;
+  margin: 0 auto 10px auto;
+  width: 100%;
+}
+
+.op_panel {
+  float: left;
+  padding-left: 10px;
+  width: 300px;
+}
+
+.opcode_field {
+  height: 100%;
+}
+
+.opcode_field .message {
+  border: 1px solid #74637f;
+  height: 100px;
+}
+
+.opcode_field .out {
+  border: 1px solid #74637f;
+  height: 70%;
+  margin-top: 5px;
 }
 
 /*

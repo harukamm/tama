@@ -171,21 +171,24 @@ let make ::onContent _children => {
     textarea_: None,
     linesDiv_: None,
     codeLinesDiv_: None,
-    content: "",
-    text_height: 1,
+    content: "if true then 1 else 0",
+    text_height: 0,
     max_text_height: 0,
     on_content: onContent
   },
 
-  didMount: fun {ReasonReact.state: state} => {
+  didMount: fun {ReasonReact.state: state, update} => {
+    let _ = onContent state.content;
+    let content = state.content;
     let (opt_highlights, state) = getReferAndNewState 2 state;
     switch opt_highlights {
     | Some e =>
-      let text = applyHightlights state.content;
+      let text = applyHightlights content;
       Rutil.setInnerHTML e text
     | _ => ()
     };
-    ReasonReact.Update state;
+    let cnt = Rutil.count_br content;
+    setLineNumber cnt state
   },
 
   render: fun self => {
