@@ -2,7 +2,7 @@
  * text field
  */
 
-.text_field.container {
+.text_field .txt_container {
   display: block;
   float: left;
   width: 450px;
@@ -62,19 +62,23 @@
   white-space: nowrap;
 }
 
-.text_field.container > *, *::before, *::after {
+.txt_container > *, *::before, *::after {
   box-sizing: border-box;
 }
 
-.text_field.container, .text_field .backdrop, .text_field textarea, .lines {
+.text_field, .text_field .txt_container, .text_field .backdrop, .text_field textarea, .lines {
   height: 400px;
+}
+
+.text_field {
+  width: 500px;
 }
 
 .text_field .backdrop, .text_field textarea {
   width: 400px;
 }
 
-.text_field.container textarea, .text_field .highlights {
+.text_field textarea, .text_field .highlights {
   font-family: 'Verdana', Georgia, Serif;
   font-size: 12pt;
   font-weight: 100;

@@ -1,13 +1,5 @@
 open Types
 
-exception Out_of_Index
-
-exception Unexpected of token_t
-
-exception Not_Found_Match of string
-
-exception Has_No_Token
-
 let ptr = ref 0
 
 let tarr : token_t array ref = ref [||]
@@ -195,7 +187,6 @@ let get_and_merge_ast_info ts =
  *    | f+
  *)
 
-exception SNH (* should not happen *)
 let get_name_from_var v = match v with
   | Var (s, _) -> s
   | _ -> raise SNH

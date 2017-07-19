@@ -189,12 +189,12 @@ let make ::onContent _children => {
   },
 
   render: fun self => {
-    <div>
+    <div className="text_field">
       <div className="lines" ref=(self.update (setRefer 4))>
         <div className="codelines" ref=(self.update (setRefer 5))>
         </div>
       </div>
-      <div className="container text_field" ref=(self.update (setRefer 0))>
+      <div className="txt_container" ref=(self.update (setRefer 0))>
         <div className="backdrop" ref=(self.update (setRefer 1))>
           <div className="highlights" ref=(self.update (setRefer 2))>
           </div>
