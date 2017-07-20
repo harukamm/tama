@@ -208,7 +208,7 @@ let rec emit_h t = match t with
   | Declare (x, _::_, e1, _, l) ->
     let c1 = emit_h e1 in
     let () = add_func (x, WithInfo ([c1], l)) in
-    WithInfo ([PUSH 0], l)
+    WithInfo ([], l)
   | Block (es, l) ->
     let cs = List.map emit_h es in
     WithInfo (cs, l)
@@ -370,8 +370,7 @@ let step_exe (op : op_t) = match op with
     pushi_stk i; ahead ()
   | JMP x ->
     let i = until_label x in
-    set_pc i;
-    ahead ()
+    set_pc i
   | JZ x ->
     let x1 = pop_stk () in
     begin
@@ -390,7 +389,8 @@ let step_exe (op : op_t) = match op with
       | _ -> failwith "comp"
     end
   | CALL n ->
-    let f = getv_stk n in
+    let len = stk_len () in
+    let f = getv_stk (len - 1 - n) in
     begin
       match f with
       | Pointer (p) ->
@@ -403,7 +403,7 @@ let step_exe (op : op_t) = match op with
     ahead ()
   | MOV (Index (i)) ->
     let v = getv_stk (i) in
-    push_stk v
+    push_stk v; ahead ()
   | MOV (Offset (i)) ->
     let p = get_bsp () in
     let v = getv_stk (i + p) in
