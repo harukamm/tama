@@ -4,10 +4,13 @@
  */
 
 type state = {
+  is_ready: bool,
   is_executing: bool,
-  opcodes_text: string,
+  out_div: option Dom.element,
   error_message: ReasonReact.reactElement,
-  on_error: (int, int) => unit
+  on_error: (int, int) => unit,
+  on_ready: bool => unit,
+  on_end: unit => unit
 };
 
 type retainedProps = {
@@ -16,16 +19,54 @@ type retainedProps = {
   isExecuting: bool
 };
 
-let stepOne () {ReasonReact.state: state} => {
-  ReasonReact.NoUpdate
+let setOutRef theRef {ReasonReact.state: state} => {
+  let opt_ref = Js.Null.to_opt theRef;
+  let opt_ref' =
+    switch opt_ref {
+    | None => {
+        let query = ".opcode_field .out";
+        let e = Rutil.querySelector query;
+        Rutil.isNullElement e ? None : Some e
+      };
+    | Some _ => opt_ref
+    };
+  ReasonReact.SilentUpdate {...state, out_div: opt_ref'}
 };
 
-let stopExecuting () {ReasonReact.state: state} => {
-  ReasonReact.NoUpdate
+let outSetter value opt_e =>
+  switch opt_e {
+  | None => ()
+  | Some e => Rutil.setInnerHTML e value
+  };
+
+let stepOne () {ReasonReact.state: state} => {
+  if(not state.is_ready) {
+    ReasonReact.NoUpdate
+  } else {
+    Tamavm.step_exe_main ();
+    let s = Tamavm.highlighted_opcode ();
+    outSetter s state.out_div; 
+    ReasonReact.NoUpdate
+  }
+};
+
+let quitExecuting () {ReasonReact.state: state} => {
+  Tamavm.clear ();
+  let s = Tamavm.highlighted_opcode ();
+  outSetter s state.out_div;
+  ReasonReact.Update {...state, is_executing: false}
 };
 
 let startExecuting () {ReasonReact.state: state} => {
-  ReasonReact.NoUpdate
+  if(not state.is_ready) {
+    Js.log "fuga";
+    ReasonReact.NoUpdate
+  } else {
+    Tamavm.init ();
+    let s = Tamavm.highlighted_opcode ();
+    outSetter s state.out_div;
+    ReasonReact.SilentUpdate {...state, is_executing: true}
+  }
 };
 
 let error_typ_text (t : Types.error_typ) =>
@@ -42,7 +83,9 @@ let opcodesSetter value {ReasonReact.state: state} => {
   | RSuccess x =>
     let e =
       <span className="success"> (Rutil.s2e "Success!") </span>;
-    ReasonReact.Update {...state, opcodes_text: x, error_message: e}
+    state.on_ready true;
+    outSetter x state.out_div;
+    ReasonReact.Update {...state, is_ready: true, error_message: e}
   | RError typ msg opt_info =>
     let typ' = error_typ_text typ;
     let e =
@@ -54,20 +97,24 @@ let opcodesSetter value {ReasonReact.state: state} => {
     | None => ()
     | Some ((p1, _, _), (p2, _, _)) => state.on_error (p1, p2)
     };
-    ReasonReact.Update {...state, error_message: e}
+    state.on_ready false;
+    ReasonReact.Update {...state, is_ready: false, error_message: e}
   }
 };
 
 let component = ReasonReact.statefulComponentWithRetainedProps "opcodeField";
 
-let make ::isExecuting ::sourceText ::step ::onError _children => {
+let make ::isExecuting ::sourceText ::step ::onError ::onReady ::onEnd _children => {
   ...component,
 
   initialState: fun _ => {
+    is_ready: false,
     is_executing: isExecuting,
-    opcodes_text: "",
+    out_div: None,
     error_message: Rutil.nulle,
-    on_error: onError
+    on_error: onError,
+    on_ready: onReady,
+    on_end: onEnd
   },
 
   retainedProps: {
@@ -86,7 +133,7 @@ let make ::isExecuting ::sourceText ::step ::onError _children => {
       newSelf.update stepOne ();
     };
     if(old_.isExecuting && not new_.isExecuting) {
-      newSelf.update stopExecuting ();
+      newSelf.update quitExecuting ();
     };
     if(not old_.isExecuting && new_.isExecuting) {
       newSelf.update startExecuting ();
@@ -99,8 +146,7 @@ let make ::isExecuting ::sourceText ::step ::onError _children => {
       <div className="message">
         state.error_message
       </div>
-      <div className="out">
-        (Rutil.s2e state.opcodes_text)
+      <div className="out" ref=(self.update setOutRef)>
       </div>
     </div>
   }

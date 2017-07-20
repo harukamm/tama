@@ -192,7 +192,7 @@ let handleInput (e : ReactEventRe.Form.t) {ReasonReact.state: state} => {
 
 let component = ReasonReact.statefulComponentWithRetainedProps "textfield:";
 
-let make ::onContent ::mark _children => {
+let make ::onContent ::mark ::lock _children => {
   ...component,
 
   initialState: fun _ => {
@@ -250,7 +250,8 @@ let make ::onContent ::mark _children => {
           <div className="highlights" ref=(self.update (setRefer 2))>
           </div>
         </div>
-        <textarea ref=(self.update (setRefer 3)) onScroll=(self.update handleScroll) onInput=(self.update handleInput) wrap="off">
+        <textarea ref=(self.update (setRefer 3)) onScroll=(self.update handleScroll)
+          onInput=(self.update handleInput) wrap="off" readOnly=(Rutil.jbl lock)>
           (Rutil.s2e self.state.content)
         </textarea>
       </div>

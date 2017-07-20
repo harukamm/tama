@@ -109,16 +109,34 @@
   white-space: pre;
 }
 
+div.tama {
+  display: inline-flex;
+}
+
 .cmp_btn {
   height: 30px;
   margin: 0 auto 10px auto;
   width: 100%;
 }
 
-.step_btn {
-  height: 30px;
-  margin: 0 auto 10px auto;
+div.action {
+  margin-bottom: 10px;
+  text-align: center;
   width: 100%;
+}
+
+div.action > button {
+  display: inline-block;
+  height: 30px;
+  width: 90px;
+}
+
+.quit_btn {
+  margin-left: 10px;
+}
+
+.step_btn {
+  margin-left: 10px;
 }
 
 .op_panel {
@@ -144,6 +162,10 @@
   margin-top: 5px;
   overflow: auto;
   white-space: pre;
+}
+
+.opcode_field .out > mark {
+  display: block;
 }
 
 .opcode_field .error_typ {

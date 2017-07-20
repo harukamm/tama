@@ -466,6 +466,47 @@ let init () =
   current_state := (Main (0, (!x_opcode).main));
   ready := true
 
+(* clear: unit -> unit *)
+let clear () =
+ (init ();
+  current_state := (Main (-1, (!x_opcode).main)))
+
+let string_of_state x = match x with
+  | Main (i, _) -> "Main (" ^ (string_of_int i) ^ ")"
+  | Func (s, i, _) -> "Func (" ^ s ^ ", " ^ (string_of_int i) ^ ")"
+
+(* display_current_op : string -> int -> oploc_t list -> string *)
+let display_current_op prefix target ops =
+  let rec h cnt lst = match lst with
+    | [] ->
+      ""
+    | (o, _) :: xs ->
+      let s = prefix ^ (display_op o) ^ "\n" in
+      let s = if cnt = target then "<mark>" ^ s ^ "</mark>" else s in
+      s ^ (h (cnt + 1) xs)
+  in
+  h 0 ops
+
+(* display_opcode_x: opcode_t -> string *)
+let display_opcode_x { funcs = c1; main = c2 } =
+  let h (name, ops) =
+    let ops_s =
+      match !current_state with
+        | Main (i, _) when name = "main" -> display_current_op "  " i ops
+        | Func (s, i, _) when name = s -> display_current_op "  " i ops
+        | _ -> display_current_op "  " (-1) ops
+    in
+    name ^ ":\n" ^ ops_s
+  in
+  let func' = List.fold_left (fun s x -> s ^ (h x)) "" c1 in
+  let main' = h ("main", c2) in
+  func' ^ "\n" ^ main'
+
+(* highlighted_opcode : unit -> string *)
+let highlighted_opcode () =
+  if !ready then display_opcode_x !x_opcode
+  else ""
+
 (* main: string -> opcode_t *)
 let main s =
   let ts =
