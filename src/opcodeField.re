@@ -4,13 +4,28 @@
  */
 
 type state = {
+  is_executing: bool,
   opcodes_text: string,
   error_message: ReasonReact.reactElement,
   on_error: (int, int) => unit
 };
 
 type retainedProps = {
-  sourceText: string
+  step: int,
+  sourceText: string,
+  isExecuting: bool
+};
+
+let stepOne () {ReasonReact.state: state} => {
+  ReasonReact.NoUpdate
+};
+
+let stopExecuting () {ReasonReact.state: state} => {
+  ReasonReact.NoUpdate
+};
+
+let startExecuting () {ReasonReact.state: state} => {
+  ReasonReact.NoUpdate
 };
 
 let error_typ_text (t : Types.error_typ) =>
@@ -45,24 +60,36 @@ let opcodesSetter value {ReasonReact.state: state} => {
 
 let component = ReasonReact.statefulComponentWithRetainedProps "opcodeField";
 
-let make ::sourceText ::onError _children => {
+let make ::isExecuting ::sourceText ::step ::onError _children => {
   ...component,
 
   initialState: fun _ => {
+    is_executing: isExecuting,
     opcodes_text: "",
     error_message: Rutil.nulle,
     on_error: onError
   },
 
   retainedProps: {
-    sourceText: sourceText
+    step: step,
+    sourceText: sourceText,
+    isExecuting: isExecuting
   },
 
   didUpdate: fun {oldSelf, newSelf} => {
-    let old_ = oldSelf.retainedProps.sourceText;
-    let new_ = newSelf.retainedProps.sourceText;
-    if(old_ !== new_) {
-      newSelf.update opcodesSetter new_;
+    let old_ = oldSelf.retainedProps;
+    let new_ = newSelf.retainedProps;
+    if(old_.sourceText !== new_.sourceText) {
+      newSelf.update opcodesSetter new_.sourceText;
+    };
+    if(old_.step !== new_.step && new_.isExecuting) {
+      newSelf.update stepOne ();
+    };
+    if(old_.isExecuting && not new_.isExecuting) {
+      newSelf.update stopExecuting ();
+    };
+    if(not old_.isExecuting && new_.isExecuting) {
+      newSelf.update startExecuting ();
     }
   },
 

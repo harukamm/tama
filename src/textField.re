@@ -190,16 +190,6 @@ let handleInput (e : ReactEventRe.Form.t) {ReasonReact.state: state} => {
   ReasonReact.Update state'
 };
 
-let addPasteListener elm => {
-  let f js_event => {
-    Rutil.preventDefault js_event;
-    let text = Rutil.getPlainClipboardData js_event;
-    Rutil.execCommand "insertText" false text;
-    ()
-  };
-  Rutil.addEventListenterToElement elm "paste" f false;
-};
-
 let component = ReasonReact.statefulComponentWithRetainedProps "textfield:";
 
 let make ::onContent ::mark _children => {

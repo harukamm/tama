@@ -88,6 +88,9 @@ let execCommand name showDefault value =>
 
 /* Dom.element APIs */
 
+external dispatchEvent : Dom.element => js_event_ => unit =
+  "" [@@bs.send];
+
 type class_lst_;
 
 external getClassList_ : Dom.element => class_lst_ =
@@ -154,6 +157,9 @@ external addEventListenerToElement_ : Dom.element => string => (js_event_ => uni
 
 let addEventListenterToElement elm typ listener showDefault =>
   addEventListenerToElement_ elm typ listener (jbl showDefault);
+
+external createEvent : string => js_event_ =
+  "Event" [@@bs.new];
 
 external defaultView_ : defaultView_ =
   "defaultView" [@@bs.scope "document"] [@@bs.val];
