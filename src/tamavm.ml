@@ -266,6 +266,12 @@ type state_t =
   | Main of int * (oploc_t list)
   | Func of string * int * (oploc_t list)
 
+exception Label_Not_Found of int
+
+exception Invalid_Operand_Type of string * string
+
+exception RuntimeError of string
+
 let ready = ref false
 
 let x_opcode = ref { funcs = []; main = [] }
@@ -279,13 +285,13 @@ let chain : state_t list ref = ref []
 let current_state = ref (Main (-1, []))
 
 let get_bsp () = match !x_bsp with
-  | [] -> failwith "bsp"
+  | [] -> raise (RuntimeError "bsp is not registered")
   | x :: _ -> x
 
 let add_bsp x = x_bsp := x :: !x_bsp
 
 let remove_bsp () = match !x_bsp with
-  | [] -> failwith "bsp"
+  | [] -> raise (RuntimeError "Cannot pop a bsp from empty list")
   | _ :: xs -> x_bsp := xs
 
 let stk_len () = List.length !x_stk
@@ -299,20 +305,20 @@ let start_invoke f n =
   current_state := Func (f, 0, fop)
 
 let end_invoke () = match !chain with
-  | [] -> failwith "endinvoke"
+  | [] -> raise (RuntimeError "Empty returning point")
   | x :: xs ->
     remove_bsp ();
     chain := xs;
     current_state := x
 
 let pop_stk () = match !x_stk with
-  | [] -> failwith "empty"
+  | [] -> raise (RuntimeError "Try to pop from empty stack")
   | x :: xs -> x_stk := xs; x
 
 let getv_stk i =
   let len = stk_len () in
   if i < len then List.nth !x_stk (len - i - 1)
-  else failwith "getv_stk"
+  else raise (RuntimeError "Access the stack out of bounds")
 
 let push_stk e = x_stk := e :: !x_stk
 let pushi_stk x = push_stk (Int x)
@@ -321,7 +327,7 @@ let pushb_stk b = if b then pushi_stk 1 else pushi_stk 0
 
 let index_of_label target ops =
   let rec h ops1 ind = match ops1 with
-    | [] -> failwith "not found"
+    | [] -> raise (Label_Not_Found target)
     | (LABEL x, _) :: xs when x = target -> ind
     | _ :: xs -> h xs (ind + 1)
   in
@@ -357,14 +363,14 @@ let step_exe (op : op_t) = match op with
     begin
       match (x1, x2) with
       | (Int i1, Int i2) -> pushi_stk (f i1 i2); ahead ()
-      | _ -> failwith "arith"
+      | _ -> raise (Invalid_Operand_Type ("int", "pointer"))
     end
   | PUSHP x ->
     begin
       try
         let _ = List.assoc x (!x_opcode).funcs in
         pushp_stk x; ahead ()
-      with Not_found -> failwith "pushp"
+      with Not_found -> raise (RuntimeError "Pointer not found")
     end
   | PUSH i ->
     pushi_stk i; ahead ()
@@ -377,7 +383,7 @@ let step_exe (op : op_t) = match op with
       match x1 with
       | Int i1 when i1 = 0 -> set_pc (until_label x)
       | Int i1 when i1 <> 0 -> ahead ()
-      | _ -> failwith "jz"
+      | _ -> raise (Invalid_Operand_Type ("int", "pointer"))
     end
   | GTEQ | GT | LSEQ | LS | EQ ->
     let x1 = pop_stk () in
@@ -386,7 +392,7 @@ let step_exe (op : op_t) = match op with
     begin
       match (x1, x2) with
       | (Int i1, Int i2) -> pushb_stk (f i1 i2); ahead ()
-      | _ -> failwith "comp"
+      | _ -> raise (Invalid_Operand_Type ("int", "pointer"))
     end
   | CALL n ->
     let len = stk_len () in
@@ -395,7 +401,7 @@ let step_exe (op : op_t) = match op with
       match f with
       | Pointer (p) ->
         start_invoke p n
-      | _ -> failwith "call"
+      | _ -> raise (Invalid_Operand_Type ("pointer", "int"))
     end
   | RETURN ->
     ahead ()
