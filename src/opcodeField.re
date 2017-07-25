@@ -92,6 +92,11 @@ let stepOne () {ReasonReact.state: state} =>
   } else {
     let result = Tamavm.step_from_reason ();
     switch result {
+    | REnd => {
+        Js.log "end";
+        state.on_end ();
+        ReasonReact.NoUpdate
+      }
     | RSuccess s => {
         outSetter s state.out_div;
         ReasonReact.NoUpdate

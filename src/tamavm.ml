@@ -533,7 +533,7 @@ let step_from_reason s =
     let highlighted = highlighted_opcode () in
     RSuccess (highlighted)
   with End_of_Step ->
-        RSuccess (display_opcode !x_opcode)
+        REnd
      | FailedWith (typ, s, info) ->
         RError (typ, s, Some info)
      | Failed (typ, s) ->

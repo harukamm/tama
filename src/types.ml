@@ -17,6 +17,7 @@ type process_type =
 type result_t =
   | RError of process_type * string * loc_info option
   | RSuccess of string
+  | REnd
 
 type op_t = ADD
           | SUB
