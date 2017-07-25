@@ -349,7 +349,7 @@ let arith = [(ADD, (+)); (SUB, (-)); (MUL, ( * )); (DIV, (/))]
 
 let comp = [(GTEQ, (>=)); (GT, (>)); (LSEQ, (<=)); (LS, (<)); (EQ, (=))]
 
-let step_exe (op : op_t) = match op with
+let execute_one_h (op : op_t) = match op with
   | ADD | SUB | MUL | DIV ->
     let x1 = pop_stk () in
     let x2 = pop_stk () in
@@ -440,23 +440,22 @@ let next_op () = match !current_state with
   | Func (_, i, op) ->
     List.nth op i
 
-(* step_exe_main: unit -> unit *)
-let step_exe_main () =
+let just_called = ref false
+
+(* execute_one_main: op_t -> unit *)
+let execute_one_main op =
   if not (!ready) then
-    failwith "not ready"
-  else if is_end () then
-   (ready := false;
-    failwith "end")
+    raise Not_Ready_State
+  else if !just_called then
+   (just_called := false;
+    ahead ())
   else
-    begin
-     if is_end_of_invocation () then
-       (end_invoke ();
-        print_endline "end invoke";
-        ahead ());       (* finished execute CALL *)
-      let (op, l) = next_op () in
-      print_endline ("step:" ^ (display_op op));
-      step_exe (op)
-    end
+   (print_endline ("step:" ^ (display_op op));
+    execute_one_h (op);
+    if is_end_of_invocation () then
+     (end_invoke ();
+      print_endline "end invoke";
+      just_called := true))
 
 (* init: unit -> unit *)
 let init () =
@@ -507,6 +506,39 @@ let highlighted_opcode () =
   if !ready then display_opcode_x !x_opcode
   else ""
 
+exception End_of_Step
+
+(* step_exe: unit -> unit *)
+let step_exe () =
+  let _ = if is_end () then raise End_of_Step in
+  let (op, l) = next_op () in
+  try
+    execute_one_main op
+  with Not_Ready_State ->
+       raise (Failed (Runtime, "VM seems not to be initialized"))
+     | Label_Not_Found (n) ->
+       raise (FailedWith (Runtime, "Label" ^ (Util.soi n) ^ " Not Found", l))
+     | Invalid_Operand_Type (expected, actual) ->
+       let disc = "(Expected: " ^ expected ^ ", " ^ "Actual: " ^ actual ^ ")" in
+       raise (FailedWith (Runtime, "Invalid operand type" ^ disc, l))
+     | Runtime_Error (msg) ->
+       raise (FailedWith (Runtime, msg, l))
+     | _ ->
+       raise (Failed (Runtime, "Unknown error"))
+
+(* step_from_reason : unit -> result_t *)
+let step_from_reason s =
+  try
+    let _ = step_exe () in
+    let highlighted = highlighted_opcode () in
+    RSuccess (highlighted)
+  with End_of_Step ->
+        RSuccess (display_opcode !x_opcode)
+     | FailedWith (typ, s, info) ->
+        RError (typ, s, Some info)
+     | Failed (typ, s) ->
+        RError (typ, s, None)
+
 (* main: string -> opcode_t *)
 let main s =
   let ts =
@@ -551,13 +583,8 @@ let main s =
   let _ = init () in
   ops
 
-(* result for reason *)
-type result_t =
-  | RError of error_typ * string * loc_info option
-  | RSuccess of string
-
-(* with_string : string -> result_t *)
-let from_reason s =
+(* compile_from_reason : string -> result_t *)
+let compile_from_reason s =
   try
     let ops = main s in
     RSuccess (display_opcode ops)

@@ -39,16 +39,70 @@ let outSetter value opt_e =>
   | Some e => Rutil.setInnerHTML e value
   };
 
-let stepOne () {ReasonReact.state: state} => {
+let string_of_process_type (t : Types.process_type) =>
+  switch t {
+  | Tokenizing => "Tokenize Error"
+  | Parsing => "Parsing Error"
+  | Prechecking => "Invalid Expression Error"
+  | Emitting => "Compile Error"
+  | Runtime => "Runtime"
+  };
+
+let string_of_loc_info (l : Types.loc_info) =>
+  switch l {
+  | ((_, l1, c1), (_, l2, c2)) =>
+    let (l1', l2') = (l1 + 1, l2 + 1);
+    let (c1', c2') = (c1 + 1, c2 + 1);
+    if (l1 == l2) {
+      "line " ^ (Util.soi l1') ^ ", character " ^
+        (Util.soi c1') ^ "-" ^ (Util.soi c2')
+    } else {
+      "from line " ^ (Util.soi l1') ^ ", character " ^
+        (Util.soi c1') ^ " to " ^ (Util.soi l2') ^ ", " ^ (Util.soi c2')
+    }
+  };
+
+let error_typ_elem (t : Types.process_type) => {
+  let typ' = string_of_process_type t;
+  <span className="error_typ"> (Rutil.s2e typ') </span>
+};
+
+let create_error_elem (t : Types.process_type) msg (l : option Types.loc_info) => {
+  let text =
+    switch l {
+    | None => msg
+    | Some x => msg ^ ", " ^ (string_of_loc_info x)
+  };
+  <span>
+    (error_typ_elem t)
+    <br />
+    (Rutil.s2e (": " ^ text))
+  </span>
+};
+
+let on_error_location state opt_info =>
+  switch opt_info {
+  | None => ()
+  | Some ((p1, _, _), (p2, _, _)) => state.on_error (p1, p2)
+  };
+
+let stepOne () {ReasonReact.state: state} =>
   if(not state.is_ready) {
     ReasonReact.NoUpdate
   } else {
-    Tamavm.step_exe_main ();
-    let s = Tamavm.highlighted_opcode ();
-    outSetter s state.out_div; 
-    ReasonReact.NoUpdate
-  }
-};
+    let result = Tamavm.step_from_reason ();
+    switch result {
+    | RSuccess s => {
+        outSetter s state.out_div;
+        ReasonReact.NoUpdate
+      }
+    | RError typ msg opt_info => {
+        let e = create_error_elem typ msg opt_info;
+        let () = on_error_location state opt_info;
+        ReasonReact.Update {...state, error_message: e}
+      }
+    }
+  };
 
 let quitExecuting () {ReasonReact.state: state} => {
   Tamavm.clear ();
@@ -69,16 +123,8 @@ let startExecuting () {ReasonReact.state: state} => {
   }
 };
 
-let error_typ_text (t : Types.error_typ) =>
-  switch t {
-  | Tokenizing => "Tokenize Error"
-  | Parsing => "Parsing Error"
-  | Prechecking => "Invalid Expression Error"
-  | Emitting => "Compile Error"
-  };
-
 let opcodesSetter value {ReasonReact.state: state} => {
-  let result = Tamavm.from_reason value;
+  let result = Tamavm.compile_from_reason value;
   switch result {
   | RSuccess x =>
     let e =
@@ -87,16 +133,8 @@ let opcodesSetter value {ReasonReact.state: state} => {
     outSetter x state.out_div;
     ReasonReact.Update {...state, is_ready: true, error_message: e}
   | RError typ msg opt_info =>
-    let typ' = error_typ_text typ;
-    let e =
-      <span>
-        (<span className="error_typ"> (Rutil.s2e typ') </span>)
-        (Rutil.s2e (": " ^ msg))
-      </span>;
-    switch opt_info {
-    | None => ()
-    | Some ((p1, _, _), (p2, _, _)) => state.on_error (p1, p2)
-    };
+    let e = create_error_elem typ msg opt_info;
+    let () = on_error_location state opt_info;
     state.on_ready false;
     ReasonReact.Update {...state, is_ready: false, error_message: e}
   }
@@ -143,10 +181,15 @@ let make ::isExecuting ::sourceText ::step ::onError ::onReady ::onEnd _children
   render: fun self => {
     let state : state = self.state;
     <div className="opcode_field">
-      <div className="message">
-        state.error_message
+      <div className="panel1">
+        <div className="message">
+          state.error_message
+        </div>
+        <div className="out" ref=(self.update setOutRef)>
+        </div>
       </div>
-      <div className="out" ref=(self.update setOutRef)>
+      <div className="stack_view">
+        (Rutil.s2e "hoge")
       </div>
     </div>
   }

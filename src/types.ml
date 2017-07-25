@@ -387,8 +387,8 @@ let display_op op = match op with
   | CALL (i) -> "CALL " ^ (string_of_int i)
   | RETURN -> "RETURN"
   | LABEL (i) -> "LABEL " ^ (string_of_int i)
-  | MOV (Index (i)) -> "MOV " ^ (string_of_int i)
-  | MOV (Offset (i)) -> "MOV " ^ (string_of_int i) ^ "(BSP)"
+  | MOV (Index (i)) -> "COPY " ^ (string_of_int i)
+  | MOV (Offset (i)) -> "COPY " ^ (string_of_int i) ^ "(BSP)"
   | POPE (i) -> "POPE " ^ (string_of_int i)
   | WithInfo _ -> failwith "not supported"
 

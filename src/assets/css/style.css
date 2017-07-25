@@ -143,25 +143,37 @@ div.action > button {
   font-family: 'Verdana', Georgia, Serif;
   float: left;
   padding-left: 10px;
-  width: 300px;
 }
 
 .opcode_field {
+  display: flex; 
+  height: 84%;
+}
+
+.opcode_field .panel1 {
   height: 100%;
+  width: 200px;
 }
 
 .opcode_field .message {
   border: 1px solid #74637f;
-  height: 50px;
+  height: 90px;
   overflow: auto;
 }
 
 .opcode_field .out {
   border: 1px solid #74637f;
-  height: 72%;
+  height: 320px;
   margin-top: 5px;
   overflow: auto;
   white-space: pre;
+}
+
+.opcode_field .stack_view {
+  border: 1px solid #74637f;
+  margin-left: 10px;
+  height: 417px;
+  width: 200px;
 }
 
 .opcode_field .out > mark {
