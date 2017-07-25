@@ -11,6 +11,13 @@ type stack_pointer =
   | Index of int
   | Offset of int
 
+type process_type =
+  | Tokenizing | Parsing | Prechecking | Emitting | Runtime
+
+type result_t =
+  | RError of process_type * string * loc_info option
+  | RSuccess of string
+
 type op_t = ADD
           | SUB
           | MUL
@@ -430,10 +437,16 @@ exception Unbound_Variable of loc_info
 
 (* TamaVM exceptions *)
 
-type error_typ =
-  | Tokenizing | Parsing | Prechecking | Emitting
+exception Not_Ready_State
 
-exception FailedWith of (error_typ * string * loc_info)
+exception Label_Not_Found of int
 
-exception Failed of (error_typ * string)
+exception Invalid_Operand_Type of string * string
+
+exception Runtime_Error of string
+
+exception FailedWith of (process_type * string * loc_info)
+
+exception Failed of (process_type * string)
+
 

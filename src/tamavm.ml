@@ -266,12 +266,6 @@ type state_t =
   | Main of int * (oploc_t list)
   | Func of string * int * (oploc_t list)
 
-exception Label_Not_Found of int
-
-exception Invalid_Operand_Type of string * string
-
-exception RuntimeError of string
-
 let ready = ref false
 
 let x_opcode = ref { funcs = []; main = [] }
@@ -285,13 +279,13 @@ let chain : state_t list ref = ref []
 let current_state = ref (Main (-1, []))
 
 let get_bsp () = match !x_bsp with
-  | [] -> raise (RuntimeError "bsp is not registered")
+  | [] -> raise (Runtime_Error "bsp is not registered")
   | x :: _ -> x
 
 let add_bsp x = x_bsp := x :: !x_bsp
 
 let remove_bsp () = match !x_bsp with
-  | [] -> raise (RuntimeError "Cannot pop a bsp from empty list")
+  | [] -> raise (Runtime_Error "Cannot pop a bsp from empty list")
   | _ :: xs -> x_bsp := xs
 
 let stk_len () = List.length !x_stk
@@ -305,20 +299,20 @@ let start_invoke f n =
   current_state := Func (f, 0, fop)
 
 let end_invoke () = match !chain with
-  | [] -> raise (RuntimeError "Empty returning point")
+  | [] -> raise (Runtime_Error "Empty returning point")
   | x :: xs ->
     remove_bsp ();
     chain := xs;
     current_state := x
 
 let pop_stk () = match !x_stk with
-  | [] -> raise (RuntimeError "Try to pop from empty stack")
+  | [] -> raise (Runtime_Error "Try to pop from empty stack")
   | x :: xs -> x_stk := xs; x
 
 let getv_stk i =
   let len = stk_len () in
   if i < len then List.nth !x_stk (len - i - 1)
-  else raise (RuntimeError "Access the stack out of bounds")
+  else raise (Runtime_Error "Access the stack out of bounds")
 
 let push_stk e = x_stk := e :: !x_stk
 let pushi_stk x = push_stk (Int x)
@@ -370,7 +364,7 @@ let step_exe (op : op_t) = match op with
       try
         let _ = List.assoc x (!x_opcode).funcs in
         pushp_stk x; ahead ()
-      with Not_found -> raise (RuntimeError "Pointer not found")
+      with Not_found -> raise (Runtime_Error "Pointer not found")
     end
   | PUSH i ->
     pushi_stk i; ahead ()
