@@ -351,8 +351,8 @@ let comp = [(GTEQ, (>=)); (GT, (>)); (LSEQ, (<=)); (LS, (<)); (EQ, (=))]
 
 let execute_one_h (op : op_t) = match op with
   | ADD | SUB | MUL | DIV ->
-    let x1 = pop_stk () in
     let x2 = pop_stk () in
+    let x1 = pop_stk () in
     let f = List.assoc op arith in
     begin
       match (x1, x2) with
@@ -380,8 +380,8 @@ let execute_one_h (op : op_t) = match op with
       | _ -> raise (Invalid_Operand_Type ("int", "pointer"))
     end
   | GTEQ | GT | LSEQ | LS | EQ ->
-    let x1 = pop_stk () in
     let x2 = pop_stk () in
+    let x1 = pop_stk () in
     let f = List.assoc op comp in
     begin
       match (x1, x2) with
