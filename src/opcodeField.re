@@ -7,6 +7,7 @@ type state = {
   is_ready: bool,
   is_executing: bool,
   out_div: option Dom.element,
+  stack_div: option Dom.element,
   error_message: ReasonReact.reactElement,
   on_error: (int, int) => unit,
   on_ready: bool => unit,
@@ -19,25 +20,58 @@ type retainedProps = {
   isExecuting: bool
 };
 
-let setOutRef theRef {ReasonReact.state: state} => {
-  let opt_ref = Js.Null.to_opt theRef;
-  let opt_ref' =
-    switch opt_ref {
-    | None => {
-        let query = ".opcode_field .out";
-        let e = Rutil.querySelector query;
-        Rutil.isNullElement e ? None : Some e
-      };
-    | Some _ => opt_ref
-    };
-  ReasonReact.SilentUpdate {...state, out_div: opt_ref'}
+let queries =
+  [(0, ".opcode_field .out"),
+    ...[(1, ".opcode_field .stack_view")]];
+
+let setReferToState ind opt_ref state => {
+  switch (ind, opt_ref) {
+  | (0, Some _) => {...state, out_div: opt_ref}
+  | (1, Some _) => {...state, stack_div: opt_ref}
+  | _ => state
+  };
 };
 
-let outSetter value opt_e =>
+let setRefer ind theRef {ReasonReact.state: state} => {
+  let opt_ref = Js.Null.to_opt theRef;
+  let state' = setReferToState ind opt_ref state;
+  ReasonReact.SilentUpdate state';
+};
+
+let getReferFromState ind state =>
+  switch ind {
+  | 0 => state.out_div
+  | 1 => state.stack_div
+  | _ => None
+  };
+
+let getReferFromDoc ind => {
+  if (List.length queries <= ind) {
+    None
+  } else {
+    let query = List.assoc ind queries;
+    let e = Rutil.querySelector query;
+    Rutil.isNullElement e ? None : Some e
+  }
+};
+
+let getReferAndNewState id state =>
+  switch (getReferFromState id state) {
+  | None =>
+    let opt = getReferFromDoc id;
+    (opt, setReferToState id opt state)
+  | Some e =>
+    (Some e, state)
+  };
+
+let outSetter id value state => {
+  let (opt_e, state') = getReferAndNewState id state;
   switch opt_e {
   | None => ()
   | Some e => Rutil.setInnerHTML e value
   };
+  state'
+};
 
 let string_of_process_type (t : Types.process_type) =>
   switch t {
@@ -97,10 +131,8 @@ let stepOne () {ReasonReact.state: state} =>
         state.on_end ();
         ReasonReact.NoUpdate
       }
-    | RSuccess s => {
-        outSetter s state.out_div;
-        ReasonReact.NoUpdate
-      }
+    | RSuccess s =>
+        ReasonReact.Update (outSetter 0 s state)
     | RError typ msg opt_info => {
         let e = create_error_elem typ msg opt_info;
         let () = on_error_location state opt_info;
@@ -112,8 +144,8 @@ let stepOne () {ReasonReact.state: state} =>
 let quitExecuting () {ReasonReact.state: state} => {
   Tamavm.clear ();
   let s = Tamavm.highlighted_opcode ();
-  outSetter s state.out_div;
-  ReasonReact.Update {...state, is_executing: false}
+  let state' = outSetter 0 s state;
+  ReasonReact.Update {...state', is_executing: false}
 };
 
 let startExecuting () {ReasonReact.state: state} => {
@@ -123,8 +155,8 @@ let startExecuting () {ReasonReact.state: state} => {
   } else {
     Tamavm.init ();
     let s = Tamavm.highlighted_opcode ();
-    outSetter s state.out_div;
-    ReasonReact.SilentUpdate {...state, is_executing: true}
+    let state' = outSetter 0 s state;
+    ReasonReact.SilentUpdate {...state', is_executing: true}
   }
 };
 
@@ -135,8 +167,10 @@ let opcodesSetter value {ReasonReact.state: state} => {
     let e =
       <span className="success"> (Rutil.s2e "Success!") </span>;
     state.on_ready true;
-    outSetter x state.out_div;
-    ReasonReact.Update {...state, is_ready: true, error_message: e}
+    Js.log x;
+    Js.log state.out_div;
+    let state' = outSetter 0 x state;
+    ReasonReact.Update {...state', is_ready: true, error_message: e}
   | RError typ msg opt_info =>
     let e = create_error_elem typ msg opt_info;
     let () = on_error_location state opt_info;
@@ -154,6 +188,7 @@ let make ::isExecuting ::sourceText ::step ::onError ::onReady ::onEnd _children
     is_ready: false,
     is_executing: isExecuting,
     out_div: None,
+    stack_div: None,
     error_message: Rutil.nulle,
     on_error: onError,
     on_ready: onReady,
