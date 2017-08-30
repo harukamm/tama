@@ -132,7 +132,10 @@ let stepOne () {ReasonReact.state: state} =>
         ReasonReact.NoUpdate
       }
     | RSuccess s =>
-        ReasonReact.Update (outSetter 0 s state)
+        let state' = outSetter 0 s state;
+        let stk = Tamavm.stack_content ();
+        let state'' = outSetter 1 stk state';
+        ReasonReact.Update state''
     | RError typ msg opt_info => {
         let e = create_error_elem typ msg opt_info;
         let () = on_error_location state opt_info;
@@ -156,7 +159,8 @@ let startExecuting () {ReasonReact.state: state} => {
     Tamavm.init ();
     let s = Tamavm.highlighted_opcode ();
     let state' = outSetter 0 s state;
-    ReasonReact.SilentUpdate {...state', is_executing: true}
+    let state'' = outSetter 1 "" state';
+    ReasonReact.SilentUpdate {...state'', is_executing: true}
   }
 };
 
@@ -225,11 +229,10 @@ let make ::isExecuting ::sourceText ::step ::onError ::onReady ::onEnd _children
         <div className="message">
           state.error_message
         </div>
-        <div className="out" ref=(self.update setOutRef)>
+        <div className="out" ref=(self.update (setRefer 0))>
         </div>
       </div>
-      <div className="stack_view">
-        (Rutil.s2e "hoge")
+      <div className="stack_view" ref=(self.update (setRefer 1))>
       </div>
     </div>
   }

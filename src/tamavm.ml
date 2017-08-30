@@ -506,6 +506,20 @@ let highlighted_opcode () =
   if !ready then display_opcode_x !x_opcode
   else ""
 
+(* display_stack_elem: elem_t -> string *)
+let display_stack_elem e = match e with
+  | Pointer s -> "ptr: \"" ^ s ^ "\""
+  | Int n -> "int: " ^ (string_of_int n)
+
+(* stack_content: unit -> string *)
+let stack_content () =
+  let h s x =
+    let x' = display_stack_elem x in
+    s ^ "<div class='stack_cell'>" ^ x' ^ "</div>"
+  in
+  let s = List.fold_left h "" !x_stk in
+  "<div class='stack_table'>" ^ s ^ "</div>"
+
 exception End_of_Step
 
 (* step_exe: unit -> unit *)

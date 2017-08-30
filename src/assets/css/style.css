@@ -173,6 +173,7 @@ div.action > button {
   border: 1px solid #74637f;
   margin-left: 10px;
   height: 417px;
+  overflow-y: auto;
   width: 200px;
 }
 
@@ -188,6 +189,31 @@ div.action > button {
 .opcode_field .success {
   color: #00ff00;
   font-weight: bold;
+}
+
+/*
+ * StackView
+ */
+
+.stack_view {
+  position: relative;
+}
+
+.stack_table {
+  bottom: 0;
+  margin: auto;
+  position: absolute;
+  width: 100%;
+}
+/*
+.stack_table:has(.stack_cell) {
+  border: 1px solid #000;
+  border-top: none;
+}*/
+
+.stack_table > .stack_cell {
+  border-top: 2px solid #000;
+  text-align: center;
 }
 
 /*
